@@ -913,13 +913,39 @@ footer > a:last-child {
 .game-canvas {
   display: block;
   width: 100%;
-  aspect-ratio: 3/1;
+  aspect-ratio: 8/3;
   touch-action: none;
   outline-offset: -4px !important;
 }
 .play-surface {
   position: relative;
 }
+.world-status {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 25px;
+  border-block: 1px solid #cbd8bd;
+  background: #e9efdf;
+  color: #47603b;
+  font: 600 10px ui-monospace, monospace;
+  letter-spacing: 1.1px;
+}
+.world-status i { display: inline-block; width: 5px; height: 5px; margin-right: 5px; border-radius: 50%; background: #537c30; }
+.control-buttons { display: flex; gap: 9px; flex-shrink: 0; }
+.control-hint { line-height: 1.6; }
+.duck-button {
+  height: 48px !important;
+  min-width: 110px;
+  border: 1px solid #9caf89 !important;
+  border-radius: 8px !important;
+  color: #254431 !important;
+  background: #e4ecd8 !important;
+  touch-action: none;
+  user-select: none;
+}
+.duck-button small { display: block; font: 600 8px ui-monospace, monospace; letter-spacing: 1px; }
+.duck-button.is-held { background: #b8d77c !important; border-color: #527436 !important; box-shadow: inset 0 2px 4px #29471c20; }
 .touch-controls {
   display: flex;
   justify-content: space-between;
@@ -930,11 +956,12 @@ footer > a:last-child {
   color: #4f6444;
 }
 .jump-button {
-  height: 44px !important;
+  height: 48px !important;
   min-width: 110px;
   background: #18392d !important;
   color: #f6f7f2 !important;
   border-radius: 8px !important;
+  touch-action: none;
 }
 .countdown-overlay {
   position: absolute;
@@ -1336,8 +1363,15 @@ footer > a:last-child {
     align-items: center;
   }
   .touch-controls > span {
-    max-width: 155px;
+    max-width: none;
+    width: 100%;
+    min-height: 18px;
   }
+  .touch-controls { flex-wrap: wrap; gap: 8px; }
+  .control-buttons { width: 100%; }
+  .control-buttons > button { flex: 1; }
+  .world-status { padding: 8px 16px; font-size: 9px; }
+  .countdown-overlay { bottom: 100px; }
   .jump-button {
     min-width: 95px;
     height: 48px !important;

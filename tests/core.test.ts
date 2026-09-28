@@ -1,10 +1,11 @@
-import { UPSERT_BEST, FINALIZE_SNAPSHOT, FINALIZE_DAY } from "../lib/queries";
+import { UPSERT_BEST, FINALIZE_SNAPSHOT, FINALIZE_DAY, ADVANCE_PRESEASON_VERSION } from "../lib/queries";
 import { initialSchemaStatements } from "../lib/database-bootstrap";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
-import { GAME, createGame, replay, step } from "../lib/game";
+import { GAME, createGame, replay, step, type Obstacle } from "../lib/game";
+import { replay as replayV1 } from "../lib/game-v1";
 import {
   csv,
   dayAt,
@@ -12,6 +13,7 @@ import {
   identity,
   validateRun,
   validDay,
+  inputSummary,
   type RunTicket,
 } from "../lib/protocol";
 
@@ -298,12 +300,12 @@ test("pattern generator maintains safe intervals across many seeds and maximum s
       const before = s.count;
       step(s);
       if (s.count !== before) {
-        assert.ok(s.tick - previousSpawn >= 100);
+        assert.ok(s.tick - previousSpawn >= 76);
         previousSpawn = s.tick;
         seen++;
         const o = s.obstacles.at(-1)!;
         assert.ok(o.h <= 44);
-        assert.ok(o.w <= 44);
+        assert.ok(o.w <= 68);
       }
       assert.ok(s.speed <= GAME.maxSpeed);
     }
@@ -337,4 +339,118 @@ test("one-button strategy can survive generated sequences through maximum speed"
     assert.equal(s.dead, false, `seed ${seed}, tick ${s.tick}`);
     assert.equal(s.speed, GAME.maxSpeed);
   }
+});
+
+function crossing(kind: Obstacle["kind"], duck: boolean, airborne = false) {
+  const s = createGame(1);
+  s.next = Infinity;
+  if (airborne) s.y = -76;
+  s.obstacles = [{ id: 1, kind, x: GAME.dinoX + 28, w: 46, h: 24, group: 1,
+    y: GAME.ground - (kind === "mid" ? 60 : kind === "low" ? 31 : 111) }];
+  step(s, false, duck);
+  return s;
+}
+test("mid-height drone hits a standing dinosaur and clears a held duck", () => {
+  assert.equal(crossing("mid", false).dead, true);
+  assert.equal(crossing("mid", true).dead, false);
+  assert.equal(crossing("mid", true).ducking, true);
+});
+test("low drones cannot be ducked and high drones reward staying on the ground", () => {
+  assert.equal(crossing("low", true).dead, true);
+  assert.equal(crossing("low", false).dead, true);
+  assert.equal(crossing("high", false).dead, false);
+  assert.equal(crossing("high", false, true).dead, true);
+});
+test("duck release restores standing and holding down prevents a jump", () => {
+  const s = createGame(1);
+  step(s, true, true);
+  assert.equal(s.y, 0);
+  assert.equal(s.ducking, true);
+  step(s, false, false);
+  assert.equal(s.ducking, false);
+  step(s, true, false);
+  assert.ok(s.y < 0);
+});
+test("down in the air lands sooner and becomes a duck on landing", () => {
+  const a = createGame(1), b = createGame(1);
+  step(a, true); step(b, true);
+  for (let i = 0; i < 6; i++) { step(a); step(b); }
+  let ticks = 0;
+  while (a.y < 0 && ticks++ < 60) { step(a, false, true); step(b); }
+  assert.ok(ticks < 15);
+  assert.equal(a.y, 0);
+  assert.equal(a.ducking, true);
+  assert.ok(b.y < 0);
+});
+test("all flight heights are introduced in the first eight obstacles for every seed", () => {
+  for (let seed = 1; seed <= 50; seed++) {
+    const s = createGame(seed), kinds: string[] = [];
+    while (s.count < 8) {
+      s.dead = false; const count = s.count; step(s);
+      if (count !== s.count) kinds.push(s.obstacles.at(-1)!.kind);
+      if (s.count === 3) assert.ok(s.tick < 650);
+    }
+    assert.equal(kinds[2], "mid"); assert.equal(kinds[4], "low"); assert.equal(kinds[7], "high");
+  }
+});
+test("jump and duck strategy survives through maximum speed with identical server replay", () => {
+  for (let seed = 1; seed <= 20; seed++) {
+    const s = createGame(seed), jumps: number[] = [], ducks: number[] = [];
+    while (s.tick < 40000 && !s.dead) {
+      const o = s.obstacles.find((o) => o.x + o.w > GAME.dinoX);
+      const duck = !!o && o.kind === "mid" && o.x - GAME.dinoX < s.speed * 24;
+      const jump = !!o && (o.kind === "low" || o.kind === "candle") && s.y === 0 && o.x - GAME.dinoX < s.speed * 14;
+      if (jump) jumps.push(s.tick);
+      if (duck !== s.duckHeld) ducks.push(s.tick);
+      step(s, jump, duck);
+    }
+    assert.equal(s.dead, false, `seed ${seed}, tick ${s.tick}`);
+    assert.equal(s.speed, GAME.maxSpeed);
+    assert.ok(ducks.length > 0);
+    assert.deepEqual(replay(seed, s.tick, jumps, ducks), s);
+    const verified = validateRun({ ...ticket, seed }, { ticks: s.tick, inputs: jumps, ducks, reason: "interrupted" }, start + s.tick * 1000 / GAME.hz + 100);
+    assert.equal(verified.score, s.score);
+  }
+});
+test("malformed duck logs, too many combined inputs and unknown versions are rejected", () => {
+  for (const ducks of [[5, 5], [7, 3], [-1], [100], [2.5], null, {}]) {
+    assert.throws(() => replay(1, 100, [], ducks as number[]));
+  }
+  assert.throws(() => replay(1, 4000, Array.from({ length: 3100 }, (_, i) => i), Array.from({ length: 3100 }, (_, i) => i)));
+  assert.throws(() => replay(1, 50, [], [], "99.0.0"));
+});
+test("pending classic tickets retain their original physics and reject duck inputs", () => {
+  const legacy = replayV1(1, 240, []);
+  assert.deepEqual(replay(1, 240, [], [], "1.0.0"), { ...createGame(1, "1.0.0"), ...legacy });
+  const result = validateRun({ ...ticket, version: "1.0.0" }, { ticks: 240, inputs: [], reason: "interrupted" }, start + 4100);
+  assert.equal(result.score, legacy.score);
+  assert.throws(() => replay(1, 50, [], [1], "1.0.0"), /does not support/);
+});
+test("a replay collision cannot be submitted as an interruption", () => {
+  const s = createGame(1);
+  while (!s.dead) step(s);
+  assert.throws(() => validateRun(ticket, { ticks: s.tick, inputs: [], reason: "interrupted" }, start + s.tick * 1000 / GAME.hz + 100), /collision must/i);
+});
+test("owner review handles classic, duck-enabled, expired and malformed logs", () => {
+  assert.equal(inputSummary("[1,2]"), "2 jumps · classic");
+  assert.equal(inputSummary('{"jumps":[1],"ducks":[2,5,8]}'), "1 jumps · 2 duck holds");
+  assert.equal(inputSummary(null), "Input log expired");
+  assert.equal(inputSummary("bad"), "Input log unavailable");
+  assert.equal(inputSummary("{}"), "Input log unavailable");
+});
+
+test("pre-season rollout preserves seed, scores and pending classic runs; finalized days stay pinned", () => {
+  const db = database();
+  db.prepare("INSERT INTO competition_days(day,seed,version,closes_at) VALUES (?,77,'1.0.0',?)").run(ticket.day, ticket.closesAt);
+  insert(db, "old-best", "wallet-a", 123, start);
+  db.exec("INSERT INTO runs(id,day,session,wallet,name,seed,version,start_at,status) VALUES ('pending','2026-09-28','s','b','Dino',77,'1.0.0',0,'active')");
+  db.prepare(ADVANCE_PRESEASON_VERSION).run(GAME.version, ticket.day);
+  const day = db.prepare("SELECT * FROM competition_days WHERE day=?").get(ticket.day)!;
+  assert.equal(day.seed, 77); assert.equal(day.version, GAME.version);
+  assert.equal(db.prepare("SELECT score FROM daily_best").get()!.score, 123);
+  assert.equal(db.prepare("SELECT version FROM runs WHERE id='pending'").get()!.version, "1.0.0");
+  db.exec("UPDATE competition_days SET version='1.0.0',finalized_at=1");
+  db.prepare(ADVANCE_PRESEASON_VERSION).run(GAME.version, ticket.day);
+  assert.equal(db.prepare("SELECT version FROM competition_days").get()!.version, "1.0.0");
+  db.close();
 });

@@ -76,7 +76,7 @@ export async function POST(
             verified.achievedAt,
             now,
             payload.ticks,
-            JSON.stringify(payload.inputs),
+            JSON.stringify(run.version === "1.0.0" ? payload.inputs : { jumps: payload.inputs, ducks: payload.ducks ?? [] }),
             payload.reason,
             id,
           ),

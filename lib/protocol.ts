@@ -1,4 +1,4 @@
-import { GAME, replay } from "./game";
+import { GAME, replay, supportedVersion } from "./game";
 export const SUBMIT_GRACE_MS = 60_000;
 export const DAY_MS = 86_400_000;
 export type Identity = { name: string; wallet: string };
@@ -14,6 +14,7 @@ export type RunTicket = {
 export type RunPayload = {
   ticks: number;
   inputs: number[];
+  ducks?: number[];
   reason: "collision" | "interrupted" | "day-end" | "time-limit";
 };
 export function dayAt(ms: number) {
@@ -54,7 +55,7 @@ export function validateRun(
   payload: RunPayload,
   now: number,
 ) {
-  if (ticket.version !== GAME.version)
+  if (!supportedVersion(ticket.version))
     throw new Error("This run uses an expired game version.");
   if (
     !payload ||
@@ -72,9 +73,11 @@ export function validateRun(
     now > end + SUBMIT_GRACE_MS
   )
     throw new Error("The submission window has ended.");
-  const s = replay(ticket.seed, payload.ticks, payload.inputs);
+  const s = replay(ticket.seed, payload.ticks, payload.inputs, payload.ducks, ticket.version);
   if (payload.reason === "collision" && !s.dead)
     throw new Error("Collision could not be verified.");
+  if (s.dead && payload.reason !== "collision")
+    throw new Error("A collision must finish the run.");
   if (
     payload.reason === "day-end" &&
     ticket.closesAt - end > 1000 / GAME.hz + 1
@@ -91,6 +94,16 @@ export function csvCell(value: unknown) {
   let s = String(value ?? "");
   if (/^[\s]*[=+@\-]/.test(s)) s = "'" + s;
   return '"' + s.replaceAll('"', '""') + '"';
+}
+export function inputSummary(log: string | null) {
+  if (!log) return "Input log expired";
+  try {
+    const value = JSON.parse(log);
+    if (Array.isArray(value)) return `${value.length} jumps · classic`;
+    if (Array.isArray(value?.jumps) && Array.isArray(value?.ducks))
+      return `${value.jumps.length} jumps · ${Math.ceil(value.ducks.length / 2)} duck holds`;
+  } catch { /* Keep historical run review usable if a log is malformed. */ }
+  return "Input log unavailable";
 }
 export function csv(rows: Record<string, unknown>[], columns: string[]) {
   return (

@@ -39,7 +39,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import GameCanvas from "./game-canvas";
 import DinoMascot from "./dino-mascot";
-import { GAME } from "@/lib/game";
+import { supportedVersion } from "@/lib/game";
 import {
   identity,
   shortWallet,
@@ -351,7 +351,7 @@ export default function DinoApp() {
         ...player,
         confirmed: true,
       });
-      if (t.version !== GAME.version)
+      if (!supportedVersion(t.version))
         throw new Error("A new game version is available. Reload this page.");
       setName(player.name);
       setWallet(player.wallet);
@@ -500,6 +500,7 @@ export default function DinoApp() {
                   ticket={ticket}
                   onFinish={finish}
                   onScore={setScore}
+                  onCancel={(message) => { setTicket(null); setPhase("ready"); setError(message); }}
                 />
               </>
             ) : phase === "result" ? (
@@ -740,7 +741,7 @@ export default function DinoApp() {
           <div className="arena-bottom">
             <span>
               <kbd>SPACE</kbd> or <kbd>↑</kbd> to jump{" "}
-              <span className="desktop-only">· tap on mobile</span>
+              <span>· hold <kbd>↓</kbd> to duck</span>
             </span>
             <span>
               <ShieldCheck size={15} /> Server-verified scores
@@ -911,7 +912,8 @@ export default function DinoApp() {
                   </li>
                   <li>
                     Jump candles and low drones. Let high drones pass overhead.
-                    There is no double jump, ducking or paid advantage.
+                    Hold ↓ or S to duck mid-height drones. Press down in the air
+                    to land faster. No double jump or paid advantage.
                   </li>
                   <li>
                     Runs end on collision, when the tab loses focus, at the
@@ -955,7 +957,7 @@ export default function DinoApp() {
             <span>02</span>
             <h3>Jump the market.</h3>
             <p>
-              Clear the candles. Watch the drones. One button, and a little good
+              Clear the candles. Duck the drones. A little rhythm, a little good
               timing.
             </p>
           </div>

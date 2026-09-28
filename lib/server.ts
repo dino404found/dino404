@@ -1,4 +1,4 @@
-import { FINALIZE_SNAPSHOT, FINALIZE_DAY } from "./queries";
+import { FINALIZE_SNAPSHOT, FINALIZE_DAY, ADVANCE_PRESEASON_VERSION } from "./queries";
 import initialSchema from "@/drizzle/0000_cute_madame_hydra.sql?raw";
 import { initialSchemaStatements } from "./database-bootstrap";
 import { env } from "cloudflare:workers";
@@ -152,6 +152,11 @@ export async function ensureDay(now = Date.now()) {
     )
     .bind(day, seed, GAME.version, dayEnd(day))
     .run();
+  // Pre-season can receive the new mechanics immediately. Reward days keep
+  // their original simulation until UTC rollover; pending runs retain theirs.
+  if (!rewards().enabled) {
+    await db().prepare(ADVANCE_PRESEASON_VERSION).bind(GAME.version, day).run();
+  }
   return await db()
     .prepare("SELECT * FROM competition_days WHERE day=?")
     .bind(day)

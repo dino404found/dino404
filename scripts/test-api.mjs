@@ -63,9 +63,12 @@ check("accelerated fabricated score denied", q.r.status === 422);
 await new Promise((r) =>
   setTimeout(r, Math.max(0, ticket.startAt + 1550 - Date.now())),
 );
+q = await request(`/api/runs/${ticket.id}/submit`, { ticks: 90, inputs: [], ducks: null, reason: "interrupted" });
+check("malformed duck input rejected", q.r.status === 422 && /input log/.test(q.data.error));
 const payload = {
   ticks: 90,
   inputs: [],
+  ducks: [10, 20, 40],
   reason: "interrupted",
   score: 99999999,
 };

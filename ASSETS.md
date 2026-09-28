@@ -9,6 +9,7 @@ The exact classic dinosaur frames are loaded from the Chromium sprite sheet. DIN
 - License: https://github.com/chromium/chromium/blob/main/LICENSE
 - Shipped notice: `public/CHROMIUM-LICENSE.txt`, linked in the page footer.
 - Retrieved: 2026-09-28. The downloaded files are included locally; the game does not hotlink them.
+- Version 2.0 also uses the original duck frames and cloud from the same atlas. Frame geometry was checked against Chromium's `components/neterror/resources/dino_game/trex.ts`; the 59 × 47 source frame contains a 25-pixel-tall duck body. No new external asset download is required.
 
 The Chromium license permits redistribution and modification subject to its notice and other conditions. It does not grant endorsement by Google. DINO404 does not claim Google or Robinhood affiliation.
 

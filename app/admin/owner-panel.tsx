@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Download, ArrowLeft, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { inputSummary } from "@/lib/protocol";
 import {
   Table,
   TableHeader,
@@ -209,8 +210,7 @@ export default function OwnerPanel() {
                   </p>
                   <p>
                     {Math.round(e.ticks / 60)} seconds ·{" "}
-                    {e.input_log ? JSON.parse(e.input_log).length : "Expired"}{" "}
-                    jump inputs
+                    {inputSummary(e.input_log)}
                   </p>
                   <small>{e.run_id}</small>
                 </div>

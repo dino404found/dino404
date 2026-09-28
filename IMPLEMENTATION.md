@@ -7,8 +7,8 @@ Tanggal: 28 September 2026. Acuan: `docs/MASTERPLAN.md`, salinan masterplan work
 | Kebutuhan masterplan | Implementasi |
 |---|---|
 | Identitas dino klasik hijau | Sprite asli Chromium dengan palet hijau/forest; bentuk dan animasi pixel dipertahankan; lisensi BSD disertakan |
-| Runner sederhana | Satu tombol lompat, tanpa duck/double-jump/power-up; keyboard Space/↑, tap arena, tombol Jump |
-| Map khas | Candlestick hijau, drone pixel tinggi/rendah, lanskap parallax halus, perubahan nuansa sage berdasarkan perjalanan |
+| Runner sederhana | Lompat Space/↑, tap arena atau Jump; tahan ↓/S atau Duck untuk nunduk; down saat di udara mempercepat turun; tanpa double-jump/power-up |
+| Map khas | Candlestick hijau tunggal/ganda/tiga; drone rendah/tengah/tinggi; tiga zona lanskap, awan pixel, parallax, penanda jarak, rotor, bayangan, dust dan feedback clear |
 | UI terang, premium, ringan | Ivory, sage, forest dan lime dalam satu sistem; tipografi sistem; transisi singkat; reduced motion; layout responsif |
 | Identitas sebelum bermain | Nama 2–20 karakter dan format wallet EVM; konfirmasi alamat; identitas tersimpan lokal untuk bermain ulang |
 | Kompetisi harian | Hari UTC, countdown dari jam server, pergantian otomatis pada 00:00 UTC |
@@ -22,10 +22,10 @@ Tanggal: 28 September 2026. Acuan: `docs/MASTERPLAN.md`, salinan masterplan work
 
 ## Detail perilaku penting
 
-- Semua pemain di hari yang sama menerima seed rintangan dan versi physics yang sama.
+- Run baru memakai seed dan versi physics harian yang sama. Hari berhadiah mempertahankan versinya sampai UTC berganti; upgrade pre-season boleh memperbarui versi tiket baru tanpa menghapus skor latihan. Tiket lama tetap divalidasi dengan versinya sendiri.
 - Game menghitung physics pada langkah 60 Hz; rendering memakai `requestAnimationFrame`. Ini target langkah simulasi, bukan klaim pengukuran FPS perangkat.
 - Kecepatan naik bertahap hingga batas. Jarak antar-rintangan diuji pada banyak seed dan kecepatan maksimum.
-- Run berakhir ketika menabrak, kehilangan fokus, orientasi berubah setelah mulai, batas 30 menit, atau pergantian hari UTC. Tidak ada pause.
+- Run berakhir ketika menabrak, kehilangan fokus, orientasi berubah setelah mulai, batas 30 menit, atau pergantian hari UTC. Tidak ada pause. Gangguan sebelum simulasi dimulai membatalkan countdown dan mengembalikan form tanpa mengirim skor palsu satu tick.
 - Input yang terjadi setelah batas UTC tidak diterima untuk hari sebelumnya. Tenggat submit/retry adalah 60 detik setelah akhir run dan tidak melewati grace period hari.
 - Skor yang gagal dikirim dapat dicoba lagi dari layar hasil; payload pending disimpan lokal sementara. Backend menerima submit identik secara idempotent.
 - Finalisasi hari dilakukan setelah 00:01 UTC pada akses berikutnya; tidak memerlukan tab terbuka tepat tengah malam. Rekap historis juga dapat difinalisasi saat dibuka owner.
@@ -38,8 +38,8 @@ Tanggal: 28 September 2026. Acuan: `docs/MASTERPLAN.md`, salinan masterplan work
 
 ### Otomatis
 
-- **19 tes core lulus:** bootstrap database kosong/idempotent tanpa menghapus data, penolakan SQL destruktif pada bootstrap, identitas, UTC termasuk tanggal invalid, physics/replay, single-jump, collision, input invalid, skor server, percepatan waktu palsu, retry kedaluwarsa, batas midnight, CSV, SQL rekor lebih tinggi, tie, snapshot/revisi/idempotensi, hari kosong, indeks, dan kelayakan pola rintangan.
-- **11 pemeriksaan API lulus pada development dan preview build produksi lokal:** jam kompetisi, proteksi admin, input invalid, cross-origin ditolak, tiket, skor palsu, submit bersamaan, normalisasi wallet, privasi leaderboard, tanggal invalid, dan akses CSV anonim.
+- **30 tes core lulus:** bootstrap database, identitas, UTC, single-jump, tabrakan tiga ketinggian drone, duck/stand/fast-fall, replay jump–duck, log input invalid, batas waktu, pending tiket 1.0, skor server, CSV, SQL rekor/tie/snapshot, indeks, pola rintangan, dan preservasi data saat rollout pre-season. Strategi jump–duck diuji pada 20 seed hingga 40.000 tick/kecepatan maksimum dengan replay identik; generator diperiksa pada 50 seed.
+- **12 pemeriksaan API lulus pada development dan preview build produksi lokal:** jam kompetisi, proteksi admin, input invalid termasuk log duck, cross-origin ditolak, tiket, skor palsu, submit bersamaan dengan input duck, normalisasi wallet, privasi leaderboard, tanggal invalid, dan akses CSV anonim.
 - **6 pemeriksaan admin/CSV lulus pada development dengan autentikasi lokal:** rekap final, tepat top 3, alamat lengkap, eksklusi, revisi/audit, CSV terbaru, serta penolakan ekspor sebelum hari berakhir.
 - TypeScript `tsc --noEmit` dan ESLint kode aplikasi lulus; build Worker produksi berhasil.
 - Kasus koneksi proxy lokal setelah penolakan origin diperbaiki: body JSON yang dibatasi ukurannya dikonsumsi sebelum origin ditolak; tes API produksi melewati urutan penolakan lalu submit valid tanpa retry tersembunyi.
@@ -50,6 +50,7 @@ Tanggal: 28 September 2026. Acuan: `docs/MASTERPLAN.md`, salinan masterplan work
 
 - Form, countdown, start/countdown run, collision, hasil terverifikasi, bermain ulang, edit identitas, leaderboard, dialog rules, serta tampilan pre-season diperiksa.
 - Layout diperiksa pada viewport desktop dan mobile; 360 px dan 390 px tidak menunjukkan overflow horizontal halaman. Pemeriksaan viewport bukan pengujian pada ponsel fisik.
+- Update 2.0 diperiksa pada desktop 1280 × 900 dan mobile 390 × 844: dua candle awal dilewati dengan keyboard, drone tengah terlihat, petunjuk duck terbaca, hasil kembali terverifikasi. Tombol mobile berukuran sekitar 148 × 48 px. Screenshot ada di folder `../artifacts/` dan menggunakan data QA lokal.
 - WebMCP `read_daily_leaderboard` diuji membaca data yang sama dengan tampilan; argumen di luar skema ditolak. Tool ini tidak mengirim skor atau bermain.
 - Akun/wallet QA bersifat sintetis dan hanya berada di database lokal. Database lokal tidak dibundel untuk deployment.
 

@@ -2,6 +2,14 @@
 
 Classic pixel runner, green candlestick obstacles, a daily UTC leaderboard, server replay validation, and private top-3 CSV exports. The product specification is in [`docs/MASTERPLAN.md`](docs/MASTERPLAN.md), copied from the workspace masterplan. Implementation decisions and verification are recorded in [`IMPLEMENTATION.md`](IMPLEMENTATION.md).
 
+## Gameplay 2.0
+
+- Space / Arrow Up, tapping the arena, or Jump: single jump.
+- Hold Arrow Down / S or the Duck button: duck. Down while airborne lands faster; releasing restores standing.
+- Green candles and low drones: jump. Mid-height drones: duck. High drones: stay on the ground.
+- The third obstacle introduces a mid-height drone, the fifth a low drone, and the eighth a high drone. Short on-screen cues teach the heights.
+- Green Valley, Signal Ridge, and Market District cycle every 7,000 distance units with a gradual palette transition. Scenery has no hitboxes or score bonuses. Reduced motion freezes decorative parallax and removes dust/clear effects.
+
 ## Run locally
 
 Requires Node.js 22.13+ and npm. From this directory:
@@ -45,7 +53,7 @@ npm run test:admin
 - One wallet occupies one position per UTC day.
 - Only a strictly higher accepted score replaces the record. Equal/lower scores preserve the prior record, name and achievement time.
 - Ranking: score descending, verified achievement time ascending, stable run ID last.
-- All players receive the same daily obstacle seed and physics version.
+- All new runs receive the same daily obstacle seed and physics version. Reward days pin that version until UTC rollover. A pre-season upgrade can advance the current day without deleting practice scores; already-issued tickets retain their original version.
 - A run ends on collision, focus loss, a 30-minute limit, or the UTC cutoff.
 - Runs must submit within 60 seconds of their ending. No simulated activity after midnight is accepted for the old day.
 - Finalization happens after 00:01 UTC when competition/leaderboard/results are accessed. It is idempotent and does not depend on a browser being open at midnight. Historical days finalize when requested.
@@ -55,7 +63,7 @@ npm run test:admin
 
 1. Visit `/admin` and sign in with the permitted owner account.
 2. Select the UTC competition date and load results.
-3. Review the leading runs. The panel includes duration, jump count, timestamp and end reason.
+3. Review the leading runs. The panel includes duration, jump count, duck holds, timestamp and end reason. Classic input logs remain readable.
 4. If a run demonstrably violates the published rules, enter a reason and exclude it. The system restores that wallet's next valid best run, recalculates winners, and stores an audit entry. Finalized days receive a new result revision.
 5. Download the final top-3 CSV and distribute rewards manually.
 6. Always use the latest revision. Previously exported CSVs are not silently altered.
@@ -87,6 +95,7 @@ The owner email has been configured privately for the registered Site using its 
 | `app/dino-app.tsx` | Public flow, identity form, countdown, results and leaderboard |
 | `app/game-canvas.tsx` | Fixed-step run controller, input capture and interruption handling |
 | `lib/game.ts` | Shared deterministic physics and replay |
+| `lib/game-v1.ts` | Frozen classic simulation for already-issued 1.0.0 tickets |
 | `lib/render-game.ts` | Canvas rendering and runtime sprite palette |
 | `lib/protocol.ts` | Identity, UTC rules, run validation and CSV escaping |
 | `lib/server.ts` | Database access, sessions, limits, finalization, owner authorization |
@@ -103,7 +112,7 @@ Stack: React/TypeScript, Vinext/Vite, Cloudflare Worker-compatible server, D1 SQ
 
 The source is prepared for Sites dispatch authentication. Deploying directly to a different host requires an equivalent trusted identity gateway. Do not trust arbitrary client-supplied `oai-authenticated-user-*` headers on an unprotected origin. The private owner panel intentionally denies access without the trusted platform identity and permitted email.
 
-Do not change `GAME.version` or physics mid-competition. A production change to physics should be scheduled for the next UTC day, or versioned validators should be retained for pending runs. No such public competition existed during initial development.
+Reward days keep their original physics version until the next UTC day. Version 2.0 retains the 1.0 validator for pending runs and old-day tickets. While rewards are disabled, new tickets switch to 2.0 immediately; existing scores, seed and original run versions are preserved. Do not activate rewards partway through this pre-season transition day.
 
 The project registration does not mean that `dino404.xyz` is connected. Domain ownership/DNS, the exact reward contract, reward amounts, distribution schedule, and token pair are separate launch tasks for the owner.
 

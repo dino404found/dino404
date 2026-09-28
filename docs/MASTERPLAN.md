@@ -830,3 +830,33 @@ Kerapian tampilan saja tidak cukup. Backend yang benar saja juga belum cukup. DI
 ---
 
 **Status pekerjaan saat dokumen ini dibuat:** masterplan saja. Implementasi aplikasi, riset aset/jaringan, deployment, peluncuran token, dan distribusi reward belum dilakukan dalam tahap ini.
+
+## 21. Amendemen gameplay dan polishing — 29 September 2026
+
+Permintaan lanjutan pemilik proyek: arena terasa sepi, drone kurang terlihat, dino harus bisa nunduk seperti runner klasik; audit dan perbaiki bug sebelum menyerahkan update. Bagian ini menggantikan ketentuan awal yang mengecualikan ducking, sesuai arahan terbaru pemilik proyek. Scope kompetisi, top 3, CSV, wallet, dan pembagian manual tetap berlaku.
+
+### 21.1 Kontrol dan rintangan versi 2.0
+
+- Lompat: Space, Arrow Up, tap arena, atau tombol Jump. Tetap satu tinggi lompatan, tanpa double jump.
+- Nunduk: tahan Arrow Down atau S di desktop; tahan tombol Duck pada HP. Lepas untuk kembali berdiri. Menahan down ketika di udara mempercepat turun dan menjadi duck setelah mendarat.
+- Candle hijau tetap menjadi rintangan utama; variasi satu, dua, atau tiga candle diperkenalkan bertahap.
+- Drone tengah harus bisa dilewati sambil nunduk; drone rendah dilompati; drone tinggi dilewatkan sambil tetap di tanah. Lompat juga dapat melewati drone tengah dengan timing yang sesuai.
+- Drone tengah diperkenalkan sebagai rintangan ketiga, drone rendah kelima, drone tinggi kedelapan. Setelah pengenalan, pola dicampur secara deterministik dari seed harian. Petunjuk pendek menjelaskan respons yang sesuai.
+- Tidak ada item, power-up, mata uang di dalam arena, biaya masuk, ataupun bonus skor baru. Tujuan tetap bertahan lebih lama dan mencapai skor tertinggi.
+
+### 21.2 Isi arena dan UX
+
+- Zona berulang: Green Valley, Signal Ridge, Market District, setiap 7.000 unit jarak. Perubahan palet berlangsung halus menjelang zona berikutnya.
+- Awan pixel, lanskap berlapis, pepohonan/jajaran bangunan/antena jauh, detail tanah dan penanda jarak menambah isi map.
+- Animasi rotor drone, bayangan, dust dan feedback CLEAR memberi umpan balik. Dekorasi tidak memiliki hitbox dan tidak menambah skor.
+- Pertahankan warna ivory/sage/forest/hijau, kontras dino dan rintangan, serta UI ringan. Reduced motion menghentikan parallax dekoratif dan meniadakan dust/feedback bergerak.
+- HP mendapat dua tombol berdampingan dengan tinggi minimum 48 px; label HOLD menegaskan bahwa Duck ditahan. Countdown, skor, petunjuk dan area main tetap terbaca tanpa overflow horizontal.
+
+### 21.3 Integritas data dan debugging
+
+- Simulasi versi 2.0.0 memverifikasi jump dan perubahan status duck pada server. Input diurutkan berdasarkan tick; batas total tetap 6.000 input; durasi maksimal 30 menit.
+- Simulasi 1.0.0 dibekukan untuk tiket lama. Versi tiket menentukan validator, bukan versi terbaru secara paksa.
+- Pada pre-season dengan reward nonaktif, tiket baru dapat langsung menggunakan 2.0. Skor latihan dan seed lama tidak dihapus. Pada hari berhadiah aktif, versi hari tetap sampai UTC rollover.
+- Countdown yang kehilangan fokus sebelum simulasi dimulai kembali ke form; jangan mengirim run satu tick yang belum dimainkan. Kontrol yang ditahan dibersihkan ketika run berhenti.
+- Log owner mendukung format klasik dan format baru (jump + duck), serta menangani log kedaluwarsa/rusak tanpa membuat panel error.
+- Wajib periksa collision berdiri/nunduk/udara, fast-fall, pelepasan input, replay identik, pola sampai kecepatan maksimum, pending tiket lama, API, top 3 CSV, build, typecheck, lint, desktop dan viewport HP. Tes lulus tidak berarti jaminan absolut nol bug.
