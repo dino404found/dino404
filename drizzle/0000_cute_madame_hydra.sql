@@ -1,4 +1,4 @@
-CREATE TABLE `audit_events` (
+CREATE TABLE IF NOT EXISTS `audit_events` (
 	`id` text PRIMARY KEY NOT NULL,
 	`at` integer NOT NULL,
 	`actor` text NOT NULL,
@@ -7,7 +7,7 @@ CREATE TABLE `audit_events` (
 	`reason` text NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE `daily_best` (
+CREATE TABLE IF NOT EXISTS `daily_best` (
 	`day` text NOT NULL,
 	`wallet` text NOT NULL,
 	`name` text NOT NULL,
@@ -17,8 +17,8 @@ CREATE TABLE `daily_best` (
 	PRIMARY KEY(`day`, `wallet`)
 );
 --> statement-breakpoint
-CREATE INDEX `idx_best_rank` ON `daily_best` (`day`,`score`,`achieved_at`,`run_id`);--> statement-breakpoint
-CREATE TABLE `competition_days` (
+CREATE INDEX IF NOT EXISTS `idx_best_rank` ON `daily_best` (`day`,`score`,`achieved_at`,`run_id`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `competition_days` (
 	`day` text PRIMARY KEY NOT NULL,
 	`seed` integer NOT NULL,
 	`version` text NOT NULL,
@@ -27,13 +27,13 @@ CREATE TABLE `competition_days` (
 	`revision` integer DEFAULT 0 NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE `rate_limits` (
+CREATE TABLE IF NOT EXISTS `rate_limits` (
 	`key` text PRIMARY KEY NOT NULL,
 	`count` integer NOT NULL,
 	`expires_at` integer NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE `runs` (
+CREATE TABLE IF NOT EXISTS `runs` (
 	`id` text PRIMARY KEY NOT NULL,
 	`day` text NOT NULL,
 	`session` text NOT NULL,
@@ -51,9 +51,9 @@ CREATE TABLE `runs` (
 	`reason` text
 );
 --> statement-breakpoint
-CREATE INDEX `idx_runs_day_status_score` ON `runs` (`day`,`status`,`score`);--> statement-breakpoint
-CREATE INDEX `idx_runs_session_status` ON `runs` (`session`,`status`);--> statement-breakpoint
-CREATE TABLE `daily_results` (
+CREATE INDEX IF NOT EXISTS `idx_runs_day_status_score` ON `runs` (`day`,`status`,`score`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `idx_runs_session_status` ON `runs` (`session`,`status`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `daily_results` (
 	`day` text NOT NULL,
 	`revision` integer NOT NULL,
 	`rank` integer NOT NULL,
@@ -64,3 +64,4 @@ CREATE TABLE `daily_results` (
 	`run_id` text NOT NULL,
 	PRIMARY KEY(`day`, `revision`, `rank`)
 );
+

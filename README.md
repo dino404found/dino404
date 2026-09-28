@@ -25,7 +25,7 @@ Open the exact local URL printed by the server, normally `http://localhost:5173/
 
 The migration helper remembers locally applied migrations in `.sites-runtime/local-migrations.json`. Keep that marker with the matching local database. If restoring another database, restore its corresponding migration state rather than rerunning old migrations blindly.
 
-Fresh hosted databases initialize the six initial tables and their indexes on the first API request. This uses the checked-in initial migration with additive `IF NOT EXISTS` statements, in one D1 batch, cached per Worker isolate. Existing rows are preserved. This bootstrap is for schema version 1 only; future schema changes require explicit reviewed migrations. Do not run the raw initial migration again after the runtime bootstrap has created those tables.
+Fresh hosted databases initialize the six initial tables and their indexes on the first API request. This uses the checked-in initial migration with additive `IF NOT EXISTS` statements, in one D1 batch, cached per Worker isolate. The packaged initial migration also uses `IF NOT EXISTS`, so the hosting migration runner can safely apply it to a database already initialized at runtime. Existing rows are preserved. This bootstrap is for schema version 1 only; future schema changes require explicit reviewed migrations.
 
 Stop a built preview before rebuilding on Windows because it may hold output directories open. Stop a running server with Ctrl+C in its terminal. For a built Worker preview:
 

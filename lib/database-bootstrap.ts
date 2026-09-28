@@ -8,6 +8,6 @@ export function initialSchemaStatements(sql: string) {
     .map((statement) => {
       if (!/^CREATE (TABLE|INDEX) /i.test(statement))
         throw new Error("Initial schema must contain only additive table/index creation.");
-      return statement.replace(/^CREATE (TABLE|INDEX) /i, "CREATE $1 IF NOT EXISTS ");
+      return statement.replace(/^CREATE (TABLE|INDEX)(?: IF NOT EXISTS)? /i, "CREATE $1 IF NOT EXISTS ");
     });
 }

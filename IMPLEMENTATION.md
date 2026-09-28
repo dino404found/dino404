@@ -38,12 +38,13 @@ Tanggal: 28 September 2026. Acuan: `docs/MASTERPLAN.md`, salinan masterplan work
 
 ### Otomatis
 
-- **30 tes core lulus:** bootstrap database, identitas, UTC, single-jump, tabrakan tiga ketinggian drone, duck/stand/fast-fall, replay jump–duck, log input invalid, batas waktu, pending tiket 1.0, skor server, CSV, SQL rekor/tie/snapshot, indeks, pola rintangan, dan preservasi data saat rollout pre-season. Strategi jump–duck diuji pada 20 seed hingga 40.000 tick/kecepatan maksimum dengan replay identik; generator diperiksa pada 50 seed.
+- **31 tes core lulus:** bootstrap database dan migrasi deployment berulang, identitas, UTC, single-jump, tabrakan tiga ketinggian drone, duck/stand/fast-fall, replay jump–duck, log input invalid, batas waktu, pending tiket 1.0, skor server, CSV, SQL rekor/tie/snapshot, indeks, pola rintangan, dan preservasi data saat rollout pre-season. Strategi jump–duck diuji pada 20 seed hingga 40.000 tick/kecepatan maksimum dengan replay identik; generator diperiksa pada 50 seed.
 - **12 pemeriksaan API lulus pada development dan preview build produksi lokal:** jam kompetisi, proteksi admin, input invalid termasuk log duck, cross-origin ditolak, tiket, skor palsu, submit bersamaan dengan input duck, normalisasi wallet, privasi leaderboard, tanggal invalid, dan akses CSV anonim.
 - **6 pemeriksaan admin/CSV lulus pada development dengan autentikasi lokal:** rekap final, tepat top 3, alamat lengkap, eksklusi, revisi/audit, CSV terbaru, serta penolakan ekspor sebelum hari berakhir.
 - TypeScript `tsc --noEmit` dan ESLint kode aplikasi lulus; build Worker produksi berhasil.
 - Kasus koneksi proxy lokal setelah penolakan origin diperbaiki: body JSON yang dibatasi ukurannya dikonsumsi sebelum origin ditolak; tes API produksi melewati urutan penolakan lalu submit valid tanpa retry tersembunyi.
 - Deployment awal mengungkap bahwa hosting menyediakan binding database tanpa menjalankan migrasi awal secara otomatis. Bootstrap schema v1 ditambahkan dari file migrasi yang sama: hanya `CREATE TABLE/INDEX IF NOT EXISTS`, satu batch D1, sekali per Worker isolate. Data yang sudah ada dipertahankan; migrasi schema masa depan tetap harus dikelola eksplisit.
+- Pada publikasi 2.0, hosting mulai membaca metadata migrasi yang dikemas dan menolak tabel yang sudah dibootstrap. Migrasi awal dan normalizer bootstrap dibuat sama-sama idempotent dengan `IF NOT EXISTS`; pengujian memastikan migrasi mentah dapat berjalan setelah bootstrap tanpa menghapus record. Tidak ada reset/drop tabel.
 - Navigasi dari admin ke game menggunakan tautan HTML dengan perpindahan dokumen penuh. Ini menghindari error client-router/prefetch Vinext yang ditemukan saat memeriksa tombol Back to game pada hosting, sekaligus membuka game dalam state baru.
 
 ### Browser

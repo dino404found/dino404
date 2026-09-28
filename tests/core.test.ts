@@ -454,3 +454,14 @@ test("pre-season rollout preserves seed, scores and pending classic runs; finali
   assert.equal(db.prepare("SELECT version FROM competition_days").get()!.version, "1.0.0");
   db.close();
 });
+
+test("packaged initial migration safely follows runtime bootstrap without data loss", () => {
+  const database = new DatabaseSync(":memory:"), sql = readFileSync("drizzle/0000_cute_madame_hydra.sql", "utf8");
+  for (const statement of initialSchemaStatements(sql)) database.exec(statement);
+  database.exec("INSERT INTO competition_days(day,seed,version,closes_at) VALUES ('2026-09-28',88,'1.0.0',1790640000000)");
+  database.exec(sql);
+  database.exec(sql);
+  assert.equal(database.prepare("SELECT seed FROM competition_days").get()!.seed, 88);
+  assert.equal(database.prepare("SELECT COUNT(*) n FROM sqlite_master WHERE type='table'").get()!.n, 6);
+  database.close();
+});
