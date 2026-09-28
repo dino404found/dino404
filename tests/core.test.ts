@@ -1,4 +1,5 @@
 import { UPSERT_BEST, FINALIZE_SNAPSHOT, FINALIZE_DAY } from "../lib/queries";
+import { initialSchemaStatements } from "../lib/database-bootstrap";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
@@ -13,6 +14,21 @@ import {
   validDay,
   type RunTicket,
 } from "../lib/protocol";
+
+test("fresh hosted database initializes all tables and preserves data on repeated bootstrap", () => {
+  const database = new DatabaseSync(":memory:");
+  const statements = initialSchemaStatements(readFileSync("drizzle/0000_cute_madame_hydra.sql", "utf8"));
+  for (const sql of statements) database.exec(sql);
+  assert.equal(database.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE type='table'").get()?.n, 6);
+  database.exec("INSERT INTO competition_days(day,seed,version,closes_at) VALUES ('2026-09-28',42,'1.0.0',1790640000000)");
+  for (const sql of statements) database.exec(sql);
+  assert.equal(database.prepare("SELECT seed FROM competition_days WHERE day='2026-09-28'").get()?.seed, 42);
+  database.close();
+});
+test("bootstrap refuses destructive or data-changing SQL", () => {
+  assert.throws(() => initialSchemaStatements("DROP TABLE runs;"));
+  assert.throws(() => initialSchemaStatements("DELETE FROM runs;"));
+});
 
 test("EVM identity is normalized and unsafe names/addresses are rejected", () => {
   assert.deepEqual(

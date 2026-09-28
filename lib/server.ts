@@ -1,4 +1,6 @@
 import { FINALIZE_SNAPSHOT, FINALIZE_DAY } from "./queries";
+import initialSchema from "@/drizzle/0000_cute_madame_hydra.sql?raw";
+import { initialSchemaStatements } from "./database-bootstrap";
 import { env } from "cloudflare:workers";
 import { getChatGPTUser } from "@/app/chatgpt-auth";
 import { GAME } from "./game";
@@ -36,6 +38,7 @@ export function response(
 }
 export async function handle(fn: () => Promise<Response>) {
   try {
+    await ensureDatabase();
     return await fn();
   } catch (e) {
     if (e instanceof HttpError) return response({ error: e.message }, e.status);
@@ -45,6 +48,20 @@ export async function handle(fn: () => Promise<Response>) {
     );
     return response({ error: "Something went wrong. Please try again." }, 503);
   }
+}
+let schemaReady: Promise<void> | undefined;
+function ensureDatabase() {
+  if (!schemaReady) {
+    const database = db();
+    schemaReady = database
+      .batch(initialSchemaStatements(initialSchema).map((sql) => database.prepare(sql)))
+      .then(() => undefined)
+      .catch((error) => {
+        schemaReady = undefined;
+        throw error;
+      });
+  }
+  return schemaReady;
 }
 export function sameOrigin(request: Request) {
   const origin = request.headers.get("origin");

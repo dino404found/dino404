@@ -38,11 +38,12 @@ Tanggal: 28 September 2026. Acuan: `docs/MASTERPLAN.md`, salinan masterplan work
 
 ### Otomatis
 
-- **17 tes core lulus:** identitas, UTC termasuk tanggal invalid, physics/replay, single-jump, collision, input invalid, skor server, percepatan waktu palsu, retry kedaluwarsa, batas midnight, CSV, SQL rekor lebih tinggi, tie, snapshot/revisi/idempotensi, hari kosong, indeks, dan kelayakan pola rintangan.
+- **19 tes core lulus:** bootstrap database kosong/idempotent tanpa menghapus data, penolakan SQL destruktif pada bootstrap, identitas, UTC termasuk tanggal invalid, physics/replay, single-jump, collision, input invalid, skor server, percepatan waktu palsu, retry kedaluwarsa, batas midnight, CSV, SQL rekor lebih tinggi, tie, snapshot/revisi/idempotensi, hari kosong, indeks, dan kelayakan pola rintangan.
 - **11 pemeriksaan API lulus pada development dan preview build produksi lokal:** jam kompetisi, proteksi admin, input invalid, cross-origin ditolak, tiket, skor palsu, submit bersamaan, normalisasi wallet, privasi leaderboard, tanggal invalid, dan akses CSV anonim.
 - **6 pemeriksaan admin/CSV lulus pada development dengan autentikasi lokal:** rekap final, tepat top 3, alamat lengkap, eksklusi, revisi/audit, CSV terbaru, serta penolakan ekspor sebelum hari berakhir.
 - TypeScript `tsc --noEmit` dan ESLint kode aplikasi lulus; build Worker produksi berhasil.
 - Kasus koneksi proxy lokal setelah penolakan origin diperbaiki: body JSON yang dibatasi ukurannya dikonsumsi sebelum origin ditolak; tes API produksi melewati urutan penolakan lalu submit valid tanpa retry tersembunyi.
+- Deployment awal mengungkap bahwa hosting menyediakan binding database tanpa menjalankan migrasi awal secara otomatis. Bootstrap schema v1 ditambahkan dari file migrasi yang sama: hanya `CREATE TABLE/INDEX IF NOT EXISTS`, satu batch D1, sekali per Worker isolate. Data yang sudah ada dipertahankan; migrasi schema masa depan tetap harus dikelola eksplisit.
 
 ### Browser
 
