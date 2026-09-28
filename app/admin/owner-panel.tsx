@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+/* eslint-disable @next/next/no-html-link-for-pages -- Leaving the owner area intentionally starts a fresh game document without the Vinext client router. */
 import { useEffect, useState } from "react";
 import { Download, ArrowLeft, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -99,12 +99,12 @@ export default function OwnerPanel() {
   return (
     <main className="owner-shell">
       <header className="owner-header">
-        <Link className="wordmark" href="/">
+        <a className="wordmark" href="/">
           DINO<span>404</span>
-        </Link>
-        <Link href="/">
+        </a>
+        <a href="/">
           <ArrowLeft size={16} /> Back to game
-        </Link>
+        </a>
       </header>
       <span className="eyebrow">OWNER AREA</span>
       <h1>Daily results & payouts.</h1>

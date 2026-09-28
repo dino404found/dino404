@@ -44,6 +44,7 @@ Tanggal: 28 September 2026. Acuan: `docs/MASTERPLAN.md`, salinan masterplan work
 - TypeScript `tsc --noEmit` dan ESLint kode aplikasi lulus; build Worker produksi berhasil.
 - Kasus koneksi proxy lokal setelah penolakan origin diperbaiki: body JSON yang dibatasi ukurannya dikonsumsi sebelum origin ditolak; tes API produksi melewati urutan penolakan lalu submit valid tanpa retry tersembunyi.
 - Deployment awal mengungkap bahwa hosting menyediakan binding database tanpa menjalankan migrasi awal secara otomatis. Bootstrap schema v1 ditambahkan dari file migrasi yang sama: hanya `CREATE TABLE/INDEX IF NOT EXISTS`, satu batch D1, sekali per Worker isolate. Data yang sudah ada dipertahankan; migrasi schema masa depan tetap harus dikelola eksplisit.
+- Navigasi dari admin ke game menggunakan tautan HTML dengan perpindahan dokumen penuh. Ini menghindari error client-router/prefetch Vinext yang ditemukan saat memeriksa tombol Back to game pada hosting, sekaligus membuka game dalam state baru.
 
 ### Browser
 

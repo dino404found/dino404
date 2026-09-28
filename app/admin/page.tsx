@@ -1,4 +1,4 @@
-import Link from "next/link";
+/* eslint-disable @next/next/no-html-link-for-pages -- The owner boundary uses full document navigation, including when access is denied. */
 import { requireChatGPTUser } from "@/app/chatgpt-auth";
 import { admin } from "@/lib/server";
 import OwnerPanel from "./owner-panel";
@@ -10,9 +10,9 @@ export default async function AdminPage() {
   } catch {
     return (
       <main className="owner-shell">
-        <Link className="wordmark" href="/">
+        <a className="wordmark" href="/">
           DINO404
-        </Link>
+        </a>
         <h1>Owner access is not configured.</h1>
         <p>
           This page is private. Ask the site owner to configure the permitted
