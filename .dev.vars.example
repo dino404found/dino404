@@ -1,0 +1,8 @@
+# Copy to .dev.vars only for a local built Worker preview. Never commit secrets.
+ADMIN_EMAIL=
+REWARDS_ENABLED=false
+REWARD_CONTRACT=
+REWARD_FIRST=
+REWARD_SECOND=
+REWARD_THIRD=
+REWARD_SCHEDULE=
