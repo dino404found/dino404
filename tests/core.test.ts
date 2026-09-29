@@ -2,6 +2,7 @@ import { UPSERT_BEST, FINALIZE_SNAPSHOT, FINALIZE_DAY, ADVANCE_PRESEASON_VERSION
 import { initialSchemaStatements } from "../lib/database-bootstrap";
 import { reviewStatements } from "../lib/review";
 import { personalStanding, isCurrentResponse } from "../lib/standings";
+import { nightAt, sceneColors } from "../lib/scenery";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
@@ -18,6 +19,27 @@ import {
   inputSummary,
   type RunTicket,
 } from "../lib/protocol";
+
+test("scenery starts fading at each 1000-point milestone without a reset flash", () => {
+  for (const [score, expected] of [[0,0],[999,0],[1000,0],[1050,0.5],[1100,1],[1999,1],[2000,1],[2050,0.5],[2100,0],[3000,0],[3100,1]]) {
+    assert.equal(nightAt(score * 12), expected);
+  }
+  for (const score of [1000,1100,2000,2100,3000]) assert.ok(Math.abs(nightAt(score * 12 - 0.01) - nightAt(score * 12 + 0.01)) < 0.00001);
+});
+
+test("scenery keeps labels and drone ink readable through every fade and zone", () => {
+  const luminance = (hex: string) => {
+    const rgb = [1,3,5].map(k => { const n = parseInt(hex.slice(k,k+2),16)/255; return n <= .04045 ? n/12.92 : ((n+.055)/1.055)**2.4; });
+    return rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722;
+  };
+  for (let score = 0; score <= 6000; score += 5) {
+    const palette = sceneColors(score * 12);
+    for (const [surface, foreground] of [[palette.sky, palette.ink], [palette.ground, palette.uiInk]]) {
+      const ink = luminance(foreground), background = luminance(surface), contrast = (Math.max(ink, background)+.05)/(Math.min(ink, background)+.05);
+      assert.ok(contrast >= 3, `Insufficient scene contrast at ${score}: ${contrast}`);
+    }
+  }
+});
 
 test("fresh hosted database initializes all tables and preserves data on repeated bootstrap", () => {
   const database = new DatabaseSync(":memory:");

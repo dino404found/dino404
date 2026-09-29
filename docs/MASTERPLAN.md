@@ -860,3 +860,15 @@ Permintaan lanjutan pemilik proyek: arena terasa sepi, drone kurang terlihat, di
 - Countdown yang kehilangan fokus sebelum simulasi dimulai kembali ke form; jangan mengirim run satu tick yang belum dimainkan. Kontrol yang ditahan dibersihkan ketika run berhenti.
 - Log owner mendukung format klasik dan format baru (jump + duck), serta menangani log kedaluwarsa/rusak tanpa membuat panel error.
 - Wajib periksa collision berdiri/nunduk/udara, fast-fall, pelepasan input, replay identik, pola sampai kecepatan maksimum, pending tiket lama, API, top 3 CSV, build, typecheck, lint, desktop dan viewport HP. Tes lulus tidak berarti jaminan absolut nol bug.
+
+## 22. Amendemen polishing map — 29 September 2026
+
+Arahan lanjutan pemilik proyek berdasarkan screenshot arena: pertahankan gaya dino offline klasik, hidupkan awan, perbaiki gunung dan pepohonan, serta tambahkan perubahan suasana sekitar skor 1.000.
+
+- Awan menggunakan bentuk pixel Chromium yang sudah dilisensikan, dengan dua lapisan ukuran/kecepatan drift. Gunung menjadi tiga lapisan punggungan pixel, dengan kecepatan parallax berbeda.
+- Pepohonan jauh dan dekat memiliki ukuran serta bentuk berbeda; pohon dekat bergerak satu pixel secara lembut seperti tertiup angin. Identitas Signal Ridge dan Market District tetap dipertahankan.
+- Skor 0–999 memakai siang. Mulai 1.000, palet bertransisi melalui senja sage ke malam forest; malam penuh pada 1.100. Mulai 2.000, transisi kembali ke siang dan selesai pada 2.100. Siklus berulang setiap 1.000 poin.
+- Langit malam mendapat bulan sabit pixel dan bintang kecil yang tidak berkedip. Label DAY RUN/DUSK/NIGHT RUN/DAWN menjelaskan suasana. Bar zona dan area kontrol mengikuti warna arena.
+- Candle, drone, dino, garis tanah dan petunjuk harus tetap jelas selama seluruh transisi. Dekorasi tetap di belakang lintasan.
+- Reduced motion menghentikan drift/parallax/goyangan dekoratif; perubahan warna bertahap tetap mengikuti progres skor tanpa kedipan atau efek kilat.
+- Perubahan ini visual saja: tidak mengubah physics, hitbox, pola rintangan, penilaian, validator, atau versi game 2.0.0. Tidak ada bonus, item, mekanik atau syarat hadiah baru.

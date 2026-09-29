@@ -97,6 +97,7 @@ The owner email has been configured privately for the registered Site using its 
 | `lib/game.ts` | Shared deterministic physics and replay |
 | `lib/game-v1.ts` | Frozen classic simulation for already-issued 1.0.0 tickets |
 | `lib/render-game.ts` | Canvas rendering and runtime sprite palette |
+| `lib/scenery.ts` | Visual day/night cycle, zone palettes and readable scene ink |
 | `lib/protocol.ts` | Identity, UTC rules, run validation and CSV escaping |
 | `lib/server.ts` | Database access, sessions, limits, finalization, owner authorization |
 | `lib/queries.ts` | Transactional ranking/finalization SQL used by production and tests |
@@ -124,4 +125,6 @@ Server replay rejects physically invalid runs and fabricated numeric scores. It 
 
 This implementation has automated tests and browser checks; that is not a guarantee of zero bugs. It has not been load-tested for a large public launch or physically tested on a real phone during this session. Review `IMPLEMENTATION.md` for measured results and remaining launch prerequisites.
 
-See [`docs/DEBUG-AUDIT.md`](docs/DEBUG-AUDIT.md) for the latest bug reproductions, fixes and verification. See [`ASSETS.md`](ASSETS.md) for primary sources and shipped license notices.
+The landscape fades into forest night from 1,000 to 1,100 points and back to daylight from 2,000 to 2,100, repeating every 1,000 points. Clouds, mountain layers and trees move at different speeds; reduced motion freezes decorative movement. These are visual effects and do not change scores or collisions.
+
+See [`docs/MAP-POLISH.md`](docs/MAP-POLISH.md) for landscape changes and verification, and [`docs/DEBUG-AUDIT.md`](docs/DEBUG-AUDIT.md) for the preceding bug audit. See [`ASSETS.md`](ASSETS.md) for primary sources and shipped license notices.

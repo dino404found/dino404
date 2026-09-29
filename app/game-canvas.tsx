@@ -4,6 +4,7 @@ import { ArrowDown, ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GAME, createGame, step, hazardHint, zoneAt, ZONES } from "@/lib/game";
 import { makeSprites, renderGame } from "@/lib/render-game";
+import { sceneColors } from "@/lib/scenery";
 import type { RunTicket, RunPayload } from "@/lib/protocol";
 
 export default function GameCanvas({ ticket, onFinish, onScore, onCancel }: {
@@ -12,12 +13,12 @@ export default function GameCanvas({ ticket, onFinish, onScore, onCancel }: {
   onScore: (score: number) => void;
   onCancel: (message: string) => void;
 }) {
-  const canvas = useRef<HTMLCanvasElement>(null), jump = useRef(false),
+  const canvas = useRef<HTMLCanvasElement>(null), surface = useRef<HTMLDivElement>(null), jump = useRef(false),
     duckKeys = useRef(new Set<string>()), duckPointers = useRef(new Set<number>()),
     finishRef = useRef(onFinish), scoreRef = useRef(onScore), cancelRef = useRef(onCancel);
   const [countdown, setCountdown] = useState(3), [running, setRunning] = useState(false),
     [held, setHeld] = useState(false), [hint, setHint] = useState("Jump the candles. Duck the drones."),
-    [zone, setZone] = useState<string>(ZONES[0]);
+    [zone, setZone] = useState<string>(ZONES[0]), [light, setLight] = useState("DAY RUN");
   const canDuck = ticket.version !== "1.0.0";
   useEffect(() => { finishRef.current = onFinish; scoreRef.current = onScore; cancelRef.current = onCancel; }, [onFinish, onScore, onCancel]);
   useEffect(() => {
@@ -63,6 +64,10 @@ export default function GameCanvas({ ticket, onFinish, onScore, onCancel }: {
         if (Math.floor(s.tick / 6) !== lastHud) {
           lastHud = Math.floor(s.tick / 6); scoreRef.current(s.score);
           setHint(hazardHint(s)); setZone(ZONES[zoneAt(s.distance)]);
+          const colors = sceneColors(s.distance);
+          for (const key of ["sky", "ground", "ridge"] as const) surface.current?.style.setProperty(`--scene-${key}`, colors[key]);
+          surface.current?.style.setProperty("--scene-ink", colors.uiInk);
+          setLight(colors.darkness < 0.02 ? "DAY RUN" : colors.darkness > 0.98 ? "NIGHT RUN" : Math.floor(s.score / 1000) % 2 ? "DUSK" : "DAWN");
           setHeld(s.duckHeld);
         }
         if (s.dead) { renderGame(el, s, sprite, reduced); finish("collision"); return; }
@@ -99,8 +104,8 @@ export default function GameCanvas({ ticket, onFinish, onScore, onCancel }: {
   }, [ticket, canDuck]);
   const releasePointer = (id: number) => { duckPointers.current.delete(id); setHeld(duckPointers.current.size > 0 || duckKeys.current.size > 0); };
   return (
-    <div className="play-surface">
-      <div className="world-status"><span><i /> {zone}</span><span>{canDuck ? "JUMP + DUCK" : "CLASSIC RUN"}</span></div>
+    <div className="play-surface" ref={surface}>
+      <div className="world-status"><span><i /> {zone}</span><span>{light}</span></div>
       <canvas ref={canvas} className="game-canvas" tabIndex={0}
         aria-label="Runner arena. Space or Arrow Up to jump. Hold Arrow Down or S to duck; down in the air lands faster."
         onPointerDown={(e) => { if (e.button !== 0) return; e.preventDefault(); if (running) jump.current = true; }} />

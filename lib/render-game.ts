@@ -1,4 +1,7 @@
 import { GAME, zoneAt, type GameState } from "./game";
+import { sceneColors } from "./scenery";
+
+const cloudAtlases = new WeakMap<HTMLCanvasElement, HTMLCanvasElement[]>();
 
 export function makeSprites(image: HTMLImageElement) {
   const sprite = document.createElement("canvas");
@@ -15,14 +18,43 @@ export function makeSprites(image: HTMLImageElement) {
     pixels.data[i + 2] = light ? 45 : 47;
   }
   c.putImageData(pixels, 0, 0);
+  cloudAtlases.set(sprite, ["#7c9270", "#aec2a5"].map(color => {
+    const cloud = document.createElement("canvas"); cloud.width = 46; cloud.height = 14;
+    const context = cloud.getContext("2d")!;
+    context.drawImage(sprite, 86, 2, 46, 14, 0, 0, 46, 14);
+    context.globalCompositeOperation = "source-in"; context.fillStyle = color; context.fillRect(0, 0, 46, 14);
+    return cloud;
+  }));
   return sprite;
 }
-const palettes = [
-  ["#eef2e2", "#dce5cd", "#ceddbb", "#b6cba1", "#e4ecd7"],
-  ["#ecf1e8", "#d8e3d5", "#c6d7c3", "#afc6ac", "#e0e9da"],
-  ["#f2f1e5", "#e3e4ce", "#d6dcb9", "#becaa0", "#eaeedb"],
-];
 const wrap = (x: number, span: number) => ((x % span) + span) % span;
+const peaks = [[0, 155], [44, 132], [85, 143], [146, 89], [169, 100], [181, 96], [241, 150], [280, 137], [338, 106], [357, 116], [371, 111], [429, 148], [470, 138], [512, 155]];
+function mountain(c: CanvasRenderingContext2D, shift: number, offsetY: number, scale: number) {
+  for (let tile = -1; tile < 3; tile++) {
+    const base = tile * 512 - Math.floor(shift % 512);
+    if (base > GAME.width || base + 516 < 0) continue;
+    c.beginPath(); c.moveTo(base, GAME.ground);
+    let edge = 1;
+    for (let x = 0; x <= 512; x += 4) {
+      while (edge < peaks.length - 1 && x > peaks[edge][0]) edge++;
+      const a = peaks[edge - 1], b = peaks[edge], t = (x - a[0]) / (b[0] - a[0]);
+      const y = Math.round((GAME.ground - (GAME.ground - a[1] - (b[1] - a[1]) * t) * scale + offsetY) / 2) * 2;
+      c.lineTo(base + x, y); c.lineTo(base + x + 4, y);
+    }
+    c.lineTo(base + 516, GAME.ground); c.closePath(); c.fill();
+  }
+}
+function tree(c: CanvasRenderingContext2D, x: number, base: number, height: number, pine: boolean, sway: number) {
+  const top = base - height;
+  c.fillRect(x + 7, top + 9, 3, height - 9);
+  if (pine) {
+    c.fillRect(x + 7 + sway, top, 3, 5); c.fillRect(x + 4 + sway, top + 5, 9, 6);
+    c.fillRect(x + 2 + sway, top + 11, 13, 7); c.fillRect(x + sway, top + 18, 17, 6);
+  } else {
+    c.fillRect(x + 3 + sway, top, 12, 4); c.fillRect(x + sway, top + 4, 19, 10);
+    c.fillRect(x - 3 + sway, top + 9, 24, 7); c.fillRect(x + 2 + sway, top + 16, 15, 5);
+  }
+}
 export function renderGame(canvas: HTMLCanvasElement, s: GameState, sprite: HTMLCanvasElement, reducedMotion: boolean) {
   const c = canvas.getContext("2d")!;
   const dpr = Math.min(window.devicePixelRatio || 1, 2), w = canvas.clientWidth, h = canvas.clientHeight;
@@ -31,67 +63,68 @@ export function renderGame(canvas: HTMLCanvasElement, s: GameState, sprite: HTML
   }
   c.setTransform(canvas.width / GAME.width, 0, 0, canvas.height / GAME.height, 0, 0);
   c.imageSmoothingEnabled = false;
-  const z = zoneAt(s.distance), progress = (s.distance % 7000) / 7000;
-  // Crossfade palettes as the next zone approaches, without touching physics.
-  const blend = Math.max(0, (progress - 0.85) / 0.15);
-  const color = (i: number) => {
-    const a = palettes[z][i], b = palettes[(z + 1) % palettes.length][i];
-    const rgb = [1, 3, 5].map((k) => Math.round(parseInt(a.slice(k, k + 2), 16) * (1 - blend) + parseInt(b.slice(k, k + 2), 16) * blend));
-    return `rgb(${rgb.join(",")})`;
-  };
+  const z = zoneAt(s.distance), p = sceneColors(s.distance);
   const drift = reducedMotion ? 0 : s.distance;
-  c.fillStyle = color(0); c.fillRect(0, 0, GAME.width, GAME.height);
-  c.strokeStyle = "#7894520d"; c.lineWidth = 1;
-  for (let x = 10; x < GAME.width; x += 45) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, GAME.ground); c.stroke(); }
-  for (let y = 12; y < GAME.ground; y += 45) { c.beginPath(); c.moveTo(0, y); c.lineTo(GAME.width, y); c.stroke(); }
-  c.fillStyle = "#d7e4b8"; c.fillRect(499, 26, 24, 24); c.fillStyle = color(0); c.fillRect(497, 24, 5, 5); c.fillRect(520, 47, 5, 5);
-  c.save(); c.globalAlpha = 0.32;
-  for (let i = 0; i < 5; i++) {
-    const x = wrap(i * 173 + 24 - drift * 0.035, 865) - 90;
-    c.drawImage(sprite, 86, 2, 46, 14, Math.round(x), 31 + (i % 3) * 19, 46, 14);
+  const wind = reducedMotion ? 0 : s.tick;
+  c.fillStyle = p.sky; c.fillRect(0, 0, GAME.width, GAME.height);
+  // A quiet sky keeps the silhouette of each airborne hazard easy to read.
+  c.fillStyle = "#d5e2bc"; c.globalAlpha = p.darkness * 0.7;
+  for (let i = 0; i < 16; i++) {
+    const x = wrap(i * 97 + 29, 640), y = 17 + (i * 31 % 83);
+    c.fillRect(x, y, i % 5 === 0 ? 2 : 1, 1);
   }
-  c.restore();
-  for (let layer = 0; layer < 2; layer++) {
-    const shift = (drift * (layer ? 0.095 : 0.04)) % 480;
-    c.fillStyle = color(layer + 1); c.beginPath(); c.moveTo(-480, GAME.ground);
-    for (let x = -480; x <= 1440; x += 240) {
-      const top = 113 + layer * 22;
-      c.lineTo(x - shift, 160 + layer * 9);
-      c.lineTo(x + 52 - shift, top + 16);
-      c.lineTo(x + 52 - shift, top);
-      c.lineTo(x + 102 - shift, top);
-      c.lineTo(x + 102 - shift, top + 9);
-      c.lineTo(x + 132 - shift, top + 9);
-      c.lineTo(x + 194 - shift, 167 + layer * 4);
-    }
-    c.lineTo(1440, GAME.ground); c.closePath(); c.fill();
-  }
-  // Distant world details stay pale and behind the playable track.
-  c.fillStyle = color(3);
-  for (let i = 0; i < 9; i++) {
-    const x = Math.round(wrap(i * 111 - drift * 0.16, 999) - 65);
-    if (z === 2) {
-      const height = 15 + (i % 4) * 9;
-      c.globalAlpha = 0.5; c.fillRect(x, GAME.ground - height, 19 + (i % 2) * 8, height);
-      c.globalAlpha = 0.85; c.fillRect(x + 3, GAME.ground - height + 4, 3, 3); c.fillRect(x + 11, GAME.ground - height + 4, 3, 3);
-    } else if (z === 1 && i % 3 === 0) {
-      c.globalAlpha = 0.48; c.fillRect(x + 8, 139, 3, 45); c.fillRect(x + 2, 151, 15, 2); c.fillRect(x - 3, 146, 3, 13); c.fillRect(x + 19, 146, 3, 13);
-    } else {
-      c.globalAlpha = 0.48; c.fillRect(x + 6, 161, 3, 23); c.fillRect(x, 164, 16, 9); c.fillRect(x + 3, 158, 10, 7);
-    }
+  c.globalAlpha = 1 - p.darkness; c.fillStyle = "#d4dfb4";
+  c.fillRect(523, 28, 18, 26); c.fillRect(519, 32, 26, 18);
+  c.globalAlpha = p.darkness; c.fillStyle = "#dce6c6";
+  c.beginPath(); c.moveTo(535, 28);
+  for (const [x, y] of [[525,28],[525,31],[521,31],[521,35],[518,35],[518,48],[521,48],[521,52],[525,52],[525,55],[539,55],[539,52],[543,52],[543,48],[536,48],[536,45],[532,45],[532,41],[530,41],[530,33],[532,33],[532,30],[535,30]]) c.lineTo(x, y);
+  c.closePath(); c.fill();
+  c.globalAlpha = 1;
+  const clouds = cloudAtlases.get(sprite)!;
+  for (let layer = 0; layer < 2; layer++) for (let i = 0; i < 4; i++) {
+    const x = Math.round(wrap(i * 207 + layer * 104 - drift * (layer ? 0.032 : 0.012) - wind * (layer ? 0.055 : 0.028), 828) - 70);
+    const y = 25 + (i % 3) * 21 + layer * 9, width = layer ? 53 : 37, height = layer ? 16 : 11;
+    const alpha = layer ? 0.6 : 0.32;
+    c.globalAlpha = alpha * (1 - p.darkness); c.drawImage(clouds[0], x, y, width, height);
+    c.globalAlpha = alpha * p.darkness; c.drawImage(clouds[1], x, y, width, height);
   }
   c.globalAlpha = 1;
-  c.fillStyle = color(4); c.fillRect(0, GAME.ground, GAME.width, GAME.height - GAME.ground);
-  c.fillStyle = "#6e8851"; c.fillRect(0, GAME.ground, GAME.width, 2);
-  c.fillStyle = "#c3d2af"; c.fillRect(0, GAME.ground + 2, GAME.width, 3);
-  c.fillStyle = "#96aa7c";
+  c.fillStyle = p.far; mountain(c, drift * 0.022, -9, 0.8);
+  c.fillStyle = p.mountain; mountain(c, 191 + drift * 0.047, 3, 0.83);
+  c.fillStyle = p.ridge; mountain(c, 73 + drift * 0.093, 9, 0.39);
+  // Small distant trees and larger foreground trees have separate parallax.
+  c.fillStyle = p.trees;
+  for (let i = 0; i < 13; i++) {
+    const x = Math.round(wrap(i * 79 + (i % 3) * 13 - drift * 0.12, 1027) - 45);
+    tree(c, x, 179, 24 + (i % 3) * 4, i % 3 !== 0, 0);
+  }
+  c.fillStyle = p.nearTrees;
+  for (let i = 0; i < 9; i++) {
+    const x = Math.round(wrap(i * 137 + (i % 3) * 19 - drift * 0.21, 1233) - 65);
+    const sway = reducedMotion ? 0 : Math.round(Math.sin(wind / 68 + i * 2) * 0.8);
+    if (z === 2) {
+      const height = 15 + (i % 4) * 8;
+      c.fillRect(x, 180 - height, 19 + (i % 2) * 8, height);
+      c.fillStyle = p.trees;
+      for (let row = 0; row < Math.floor(height / 9) - 1; row++) { c.fillRect(x + 4, 185 - height + row * 8, 3, 2); c.fillRect(x + 12, 185 - height + row * 8, 3, 2); }
+      c.fillStyle = p.nearTrees;
+    } else if (z === 1 && i % 3 === 0) {
+      c.fillRect(x + 8, 145, 2, 35); c.fillRect(x + 2, 155, 14, 2); c.fillRect(x - 1, 150, 2, 12); c.fillRect(x + 17, 150, 2, 12);
+    } else {
+      tree(c, x, 181, 31 + (i % 3) * 5, i % 2 === 0, sway);
+    }
+  }
+  c.fillStyle = p.ground; c.fillRect(0, GAME.ground, GAME.width, GAME.height - GAME.ground);
+  c.fillStyle = p.track; c.fillRect(0, GAME.ground, GAME.width, 2);
+  c.fillStyle = p.soil; c.fillRect(0, GAME.ground + 2, GAME.width, 3);
+  c.fillStyle = p.detail;
   for (let i = 0; i < 30; i++) {
     const x = wrap(i * 41 - drift, 1230);
     c.fillRect(Math.round(x), GAME.ground + 9 + (i % 4) * 8, 3 + (i % 5) * 2, 1);
   }
   // Distance markers are below the track, never obstacles.
   const markerStep = 600, markerBase = Math.floor(s.distance / markerStep);
-  c.font = "8px ui-monospace, monospace"; c.fillStyle = "#647b4e";
+  c.font = "8px ui-monospace, monospace"; c.fillStyle = p.uiInk;
   for (let i = 0; i < 3; i++) {
     const x = Math.round((markerBase + i) * markerStep - s.distance);
     c.fillRect(x, 225, 1, 7); c.fillText(String((markerBase + i) * 50).padStart(4, "0"), x + 5, 231);
@@ -102,13 +135,13 @@ export function renderGame(canvas: HTMLCanvasElement, s: GameState, sprite: HTML
     if (o.kind === "candle") {
       for (let i = 0; i < o.group; i++) {
         const xx = x + i * 24, yy = y + (i ? 4 : 0), hh = o.h - (i ? 4 : 0);
-        c.fillStyle = "#365d29"; c.fillRect(xx + 9, yy, 3, hh); c.fillRect(xx + 1, yy + 6, 19, hh - 13);
+        c.fillStyle = p.darkness > 0.55 ? "#a0c366" : "#365d29"; c.fillRect(xx + 9, yy, 3, hh); c.fillRect(xx + 1, yy + 6, 19, hh - 13);
         c.fillStyle = "#699d36"; c.fillRect(xx + 3, yy + 8, 15, hh - 17);
         c.fillStyle = "#b2d771"; c.fillRect(xx + 3, yy + 8, 3, hh - 17);
       }
     } else {
       const blade = reducedMotion ? 0 : Math.floor(s.tick / 3) % 2;
-      c.fillStyle = "#264637";
+      c.fillStyle = p.ink;
       c.fillRect(x + 5, y + 4, 4, 11); c.fillRect(x + 37, y + 4, 4, 11);
       c.fillRect(x + 7, y + 10, 32, 3); c.fillRect(x + 13, y + 7, 20, 12);
       c.fillRect(x + blade * 3, y + 1, 14 - blade * 4, 3); c.fillRect(x + 32 + blade * 3, y + 1, 14 - blade * 4, 3);
@@ -117,7 +150,7 @@ export function renderGame(canvas: HTMLCanvasElement, s: GameState, sprite: HTML
       c.fillStyle = "#b7ed54"; c.fillRect(x + 18, y + 12, 10, 4);
       c.fillStyle = "#f4ffd9"; c.fillRect(x + 19, y + 12, 3, 2);
       if (o.id === 3 && o.x > 210 && o.x < 570) {
-        c.font = "bold 9px ui-monospace, monospace"; c.fillStyle = "#31543b";
+        c.font = "bold 9px ui-monospace, monospace"; c.fillStyle = p.ink;
         c.fillText("↓ DUCK", x + 4, y - 9);
       }
     }
@@ -130,12 +163,12 @@ export function renderGame(canvas: HTMLCanvasElement, s: GameState, sprite: HTML
   // Chromium's duck frames are 59 x 47; the visible body is 25 pixels tall.
   c.drawImage(sprite, 848 + frame, 2, width, 47, GAME.dinoX, y, width, 47); c.restore();
   if (!reducedMotion && s.y === 0 && !s.dead) {
-    c.fillStyle = "#9cad82";
+    c.fillStyle = p.detail;
     for (let i = 0; i < 3; i++) c.fillRect(GAME.dinoX - 8 - i * 7 - (s.tick % 8), GAME.ground - 2 - (i % 2) * 3, 3, 2);
   }
   const sinceClear = s.tick - s.lastClearTick;
   if (!reducedMotion && sinceClear >= 0 && sinceClear < 22 && !s.dead) {
-    c.globalAlpha = 1 - sinceClear / 22; c.fillStyle = "#40662b";
+    c.globalAlpha = 1 - sinceClear / 22; c.fillStyle = p.ink;
     c.font = "bold 8px ui-monospace, monospace"; c.fillText("CLEAR", GAME.dinoX + 6, y - 9 - sinceClear * 0.25); c.globalAlpha = 1;
   }
 }

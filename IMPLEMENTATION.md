@@ -56,6 +56,7 @@ Tanggal: 29 September 2026. Acuan: `docs/MASTERPLAN.md`, salinan masterplan work
 - WebMCP `read_daily_leaderboard` diuji membaca data yang sama dengan tampilan; argumen di luar skema ditolak. Tool ini tidak mengirim skor atau bermain.
 - Akun/wallet QA bersifat sintetis dan hanya berada di database lokal. Database lokal tidak dibundel untuk deployment.
 - Audit lanjutan memeriksa pergantian wallet/hari, Space pada tombol rules ketika game aktif, dan navigasi tanggal hasil owner. Reproduksi bug dan batas bukti dicatat di `docs/DEBUG-AUDIT.md`.
+- Polishing map berikutnya menambah awan dua lapisan, tiga lapisan gunung, pepohonan dengan gerak angin, serta siklus siang/malam mulai skor 1.000. Core kini **37 tes lulus**, termasuk batas transisi dan kontras scene. Build, TypeScript, lint, scene siang/senja/malam/fajar, viewport HP, dan hasil run sebenarnya diperiksa; rincian serta batas pengujian ada di `docs/MAP-POLISH.md`. Suite API/admin di atas merupakan baseline audit sebelumnya dan tidak diulang untuk perubahan visual ini.
 
 ## Batas yang tetap perlu diketahui
 
