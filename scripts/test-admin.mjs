@@ -41,14 +41,14 @@ function apply(file) {
   );
   if (r.status !== 0) throw new Error(r.stderr || r.stdout);
 }
-apply(".sites-runtime/qa-export.sql");
-const login = await fetch(base + "/signin-with-chatgpt?return_to=/admin", {
-  redirect: "manual",
-});
-const cookie = login.headers.get("set-cookie")?.split(";")[0];
-assert.ok(cookie, "local mock sign-in cookie");
 const checks = [];
 try {
+  apply(".sites-runtime/qa-export.sql");
+  const login = await fetch(base + "/signin-with-chatgpt?return_to=/admin", {
+    redirect: "manual",
+  });
+  const cookie = login.headers.get("set-cookie")?.split(";")[0];
+  assert.ok(cookie, "local mock sign-in cookie");
   let r = await fetch(base + `/api/admin/results/${date}`, {
     headers: { Cookie: cookie },
   });
@@ -67,7 +67,7 @@ try {
   assert.ok(csv.includes("0x" + "1".repeat(40)));
   checks.push("CSV includes exactly the top 3 and full receiving wallets");
   await writeFile(".sites-runtime/verified-sample.csv", csv);
-  r = await fetch(base + `/api/admin/runs/${prefix}1/review`, {
+  const reviewRequests = await Promise.all(Array.from({ length: 3 }, () => fetch(base + `/api/admin/runs/${prefix}1/review`, {
     method: "POST",
     headers: {
       Cookie: cookie,
@@ -77,9 +77,9 @@ try {
     body: JSON.stringify({
       reason: "QA fixture exclusion to test result revision.",
     }),
-  });
-  assert.equal(r.status, 200);
-  checks.push("review action accepts a reason and recalculates results");
+  })));
+  assert.ok(reviewRequests.every((response) => response.status === 200));
+  checks.push("concurrent review requests complete idempotently");
   r = await fetch(base + `/api/admin/results/${date}`, {
     headers: { Cookie: cookie },
   });
@@ -88,6 +88,16 @@ try {
   assert.equal(data.entries[0].name, "QA Dino 2");
   assert.equal(data.audit.length, 1);
   checks.push("revised winners and audit log are persisted");
+  r = await fetch(base + `/api/admin/runs/${prefix}1/review`, {
+    method: "POST",
+    headers: { Cookie: cookie, Origin: base, "Content-Type": "application/json" },
+    body: JSON.stringify({ reason: "Retry after a lost review response." }),
+  });
+  assert.equal(r.status, 200);
+  data = await (await fetch(base + `/api/admin/results/${date}`, { headers: { Cookie: cookie } })).json();
+  assert.equal(data.audit.length, 1);
+  assert.equal(data.info.revision, 2);
+  checks.push("retrying an already recorded review preserves its audit entry and revision");
   r = await fetch(base + `/api/admin/results/${date}/export`, {
     headers: { Cookie: cookie },
   });

@@ -2,11 +2,11 @@ import {
   admin,
   body,
   db,
-  finalizeDay,
   handle,
   HttpError,
   response,
 } from "@/lib/server";
+import { reviewStatements } from "@/lib/review";
 export async function POST(
   request: Request,
   context: { params: Promise<{ id: string }> },
@@ -28,40 +28,14 @@ export async function POST(
       .prepare("SELECT day,wallet,status FROM runs WHERE id=?")
       .bind(id)
       .first<{ day: string; wallet: string; status: string }>();
-    if (!run || run.status !== "accepted")
+    if (!run || !["accepted", "excluded"].includes(run.status))
       throw new HttpError(409, "This run is not eligible for review.");
+    if (run.status === "excluded") return response({ status: "excluded", day: run.day });
     const database = db();
-    await database.batch([
-      database
-        .prepare(
-          "UPDATE runs SET status='excluded' WHERE id=? AND status='accepted'",
-        )
-        .bind(id),
-      database
-        .prepare("DELETE FROM daily_best WHERE day=? AND wallet=?")
-        .bind(run.day, run.wallet),
-      database
-        .prepare(
-          "INSERT INTO daily_best(day,wallet,name,score,achieved_at,run_id) SELECT day,wallet,name,score,achieved_at,id FROM runs WHERE day=? AND wallet=? AND status='accepted' ORDER BY score DESC,achieved_at ASC,id ASC LIMIT 1",
-        )
-        .bind(run.day, run.wallet),
-      database
-        .prepare("UPDATE competition_days SET finalized_at=NULL WHERE day=?")
-        .bind(run.day),
-      database
-        .prepare(
-          "INSERT INTO audit_events(id,at,actor,action,target,reason) VALUES (?,?,?,?,?,?)",
-        )
-        .bind(
-          crypto.randomUUID(),
-          Date.now(),
-          user.userId,
-          "exclude_run",
-          id,
-          value.reason.trim(),
-        ),
-    ]);
-    await finalizeDay(run.day);
+    await database.batch(reviewStatements({
+      id, day: run.day, wallet: run.wallet, operationId: crypto.randomUUID(),
+      at: Date.now(), actor: user.userId, reason: value.reason.trim(),
+    }).map(({ sql, params }) => database.prepare(sql).bind(...params)));
     return response({ status: "excluded", day: run.day });
   });
 }

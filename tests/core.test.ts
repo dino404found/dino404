@@ -1,5 +1,7 @@
 import { UPSERT_BEST, FINALIZE_SNAPSHOT, FINALIZE_DAY, ADVANCE_PRESEASON_VERSION } from "../lib/queries";
 import { initialSchemaStatements } from "../lib/database-bootstrap";
+import { reviewStatements } from "../lib/review";
+import { personalStanding, isCurrentResponse } from "../lib/standings";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
@@ -433,7 +435,7 @@ test("a replay collision cannot be submitted as an interruption", () => {
 });
 test("owner review handles classic, duck-enabled, expired and malformed logs", () => {
   assert.equal(inputSummary("[1,2]"), "2 jumps · classic");
-  assert.equal(inputSummary('{"jumps":[1],"ducks":[2,5,8]}'), "1 jumps · 2 duck holds");
+  assert.equal(inputSummary('{"jumps":[1],"ducks":[2,5,8]}'), "1 jump · 2 duck holds");
   assert.equal(inputSummary(null), "Input log expired");
   assert.equal(inputSummary("bad"), "Input log unavailable");
   assert.equal(inputSummary("{}"), "Input log unavailable");
@@ -464,4 +466,61 @@ test("packaged initial migration safely follows runtime bootstrap without data l
   assert.equal(database.prepare("SELECT seed FROM competition_days").get()!.seed, 88);
   assert.equal(database.prepare("SELECT COUNT(*) n FROM sqlite_master WHERE type='table'").get()!.n, 6);
   database.close();
+});
+
+test("personal record is scoped to its wallet and UTC day across midnight and identity changes", () => {
+  const record = { wallet: "0xabcdef", day: "2026-09-28", score: 900, rank: 2 };
+  assert.deepEqual(personalStanding(record, "0xABCDEF", "2026-09-28"), { score: 900, rank: 2 });
+  assert.deepEqual(personalStanding(record, "0xabcdef", "2026-09-29"), { score: 0, rank: null });
+  assert.deepEqual(personalStanding(record, "0x123456", "2026-09-28"), { score: 0, rank: null });
+  assert.deepEqual(personalStanding(null, "0xabcdef", "2026-09-28"), { score: 0, rank: null });
+});
+test("late lookup cannot overwrite a new result or roll the leaderboard back to yesterday", async () => {
+  let resolveOld!: (value: number) => void;
+  const oldLookup = new Promise<number>((resolve) => { resolveOld = resolve; });
+  let latest = 1, shown = 100;
+  const request = latest;
+  const completion = oldLookup.then((score) => {
+    if (isCurrentResponse(request, latest, "2026-09-28", "2026-09-28")) shown = score;
+  });
+  latest++; shown = 500;
+  resolveOld(100); await completion;
+  assert.equal(shown, 500);
+  assert.equal(isCurrentResponse(2, 2, "2026-09-28", "2026-09-29"), false);
+  assert.equal(isCurrentResponse(2, 2, "2026-09-29", "2026-09-29"), true);
+});
+function applyReview(db: DatabaseSync, id: string, wallet: string, operationId: string, at: number) {
+  db.exec("BEGIN");
+  try {
+    for (const { sql, params } of reviewStatements({ id, wallet, operationId, at, day: ticket.day, actor: "owner", reason: "Verified QA violation" })) db.prepare(sql).run(...params);
+    db.exec("COMMIT");
+  } catch (error) { db.exec("ROLLBACK"); throw error; }
+}
+test("duplicate review claims exclude once, restore the wallet's next best and preserve result revisions", () => {
+  const db = database();
+  db.prepare("INSERT INTO competition_days(day,seed,version,closes_at) VALUES (?,1,?,?)").run(ticket.day, GAME.version, ticket.closesAt);
+  insert(db, "backup", "a", 200, 10);
+  insert(db, "winner", "a", 800, 20);
+  insert(db, "runner-b", "b", 400, 30);
+  const now = ticket.closesAt + 61000;
+  db.prepare(FINALIZE_SNAPSHOT).run(ticket.day, 60000, now);
+  db.prepare(FINALIZE_DAY).run(now, ticket.day, 60000, now);
+  applyReview(db, "winner", "a", "claim-1", now);
+  applyReview(db, "winner", "a", "claim-2", now);
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM audit_events").get()!.n, 1);
+  assert.equal(db.prepare("SELECT revision FROM competition_days").get()!.revision, 2);
+  assert.equal(db.prepare("SELECT run_id FROM daily_best WHERE wallet='a'").get()!.run_id, "backup");
+  assert.equal(db.prepare("SELECT run_id FROM daily_results WHERE revision=1 AND rank=1").get()!.run_id, "winner");
+  assert.equal(db.prepare("SELECT run_id FROM daily_results WHERE revision=2 AND rank=1").get()!.run_id, "runner-b");
+  db.close();
+});
+test("review before cutoff updates live records without publishing premature winners", () => {
+  const db = database();
+  db.prepare("INSERT INTO competition_days(day,seed,version,closes_at) VALUES (?,1,?,?)").run(ticket.day, GAME.version, ticket.closesAt);
+  insert(db, "only-run", "a", 500, 10);
+  applyReview(db, "only-run", "a", "live-claim", ticket.startAt + 10000);
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM daily_best").get()!.n, 0);
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM daily_results").get()!.n, 0);
+  assert.equal(db.prepare("SELECT finalized_at FROM competition_days").get()!.finalized_at, null);
+  db.close();
 });

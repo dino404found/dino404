@@ -64,7 +64,7 @@ npm run test:admin
 1. Visit `/admin` and sign in with the permitted owner account.
 2. Select the UTC competition date and load results.
 3. Review the leading runs. The panel includes duration, jump count, duck holds, timestamp and end reason. Classic input logs remain readable.
-4. If a run demonstrably violates the published rules, enter a reason and exclude it. The system restores that wallet's next valid best run, recalculates winners, and stores an audit entry. Finalized days receive a new result revision.
+4. If a run demonstrably violates the published rules, enter a reason and exclude it. One transaction restores that wallet's next valid best run, recalculates winners, and stores an audit entry. Finalized days receive a new result revision. Concurrent requests and retries do not duplicate the review or revision.
 5. Download the final top-3 CSV and distribute rewards manually.
 6. Always use the latest revision. Previously exported CSVs are not silently altered.
 
@@ -100,6 +100,8 @@ The owner email has been configured privately for the registered Site using its 
 | `lib/protocol.ts` | Identity, UTC rules, run validation and CSV escaping |
 | `lib/server.ts` | Database access, sessions, limits, finalization, owner authorization |
 | `lib/queries.ts` | Transactional ranking/finalization SQL used by production and tests |
+| `lib/review.ts` | Atomic, idempotent owner exclusion and result revision |
+| `lib/standings.ts` | Wallet/day record scoping and stale-response checks |
 | `app/api/` | Public and protected server endpoints |
 | `app/admin/` | Private review and CSV interface |
 | `db/schema.ts`, `drizzle/` | Schema and generated migrations |
@@ -122,4 +124,4 @@ Server replay rejects physically invalid runs and fabricated numeric scores. It 
 
 This implementation has automated tests and browser checks; that is not a guarantee of zero bugs. It has not been load-tested for a large public launch or physically tested on a real phone during this session. Review `IMPLEMENTATION.md` for measured results and remaining launch prerequisites.
 
-See [`ASSETS.md`](ASSETS.md) for primary sources and shipped license notices.
+See [`docs/DEBUG-AUDIT.md`](docs/DEBUG-AUDIT.md) for the latest bug reproductions, fixes and verification. See [`ASSETS.md`](ASSETS.md) for primary sources and shipped license notices.

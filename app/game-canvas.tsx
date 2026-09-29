@@ -72,6 +72,9 @@ export default function GameCanvas({ ticket, onFinish, onScore, onCancel }: {
       raf = requestAnimationFrame(frame);
     };
     const keyDown = (e: KeyboardEvent) => {
+      const target = e.target instanceof HTMLElement ? e.target : null;
+      if (target?.closest("button, a, input, textarea, select, [contenteditable=true]") &&
+          !target.closest(".play-surface")) return;
       if ((e.code === "ArrowDown" || e.code === "KeyS") && canDuck) {
         e.preventDefault(); if (now() >= ticket.startAt) duckKeys.current.add(e.code);
       } else if (e.code === "Space" || e.code === "ArrowUp") {
@@ -85,7 +88,8 @@ export default function GameCanvas({ ticket, onFinish, onScore, onCancel }: {
     window.addEventListener("keydown", keyDown); window.addEventListener("keyup", keyUp);
     window.addEventListener("blur", blur); window.addEventListener("orientationchange", blur);
     document.addEventListener("visibilitychange", visibility);
-    raf = requestAnimationFrame(frame);
+    if (document.hidden) finish("interrupted");
+    else raf = requestAnimationFrame(frame);
     return () => {
       disposed = true; cancelAnimationFrame(raf); jump.current = false; keys.clear(); pointers.clear();
       window.removeEventListener("keydown", keyDown); window.removeEventListener("keyup", keyUp);
@@ -99,7 +103,7 @@ export default function GameCanvas({ ticket, onFinish, onScore, onCancel }: {
       <div className="world-status"><span><i /> {zone}</span><span>{canDuck ? "JUMP + DUCK" : "CLASSIC RUN"}</span></div>
       <canvas ref={canvas} className="game-canvas" tabIndex={0}
         aria-label="Runner arena. Space or Arrow Up to jump. Hold Arrow Down or S to duck; down in the air lands faster."
-        onPointerDown={(e) => { e.preventDefault(); if (running) jump.current = true; }} />
+        onPointerDown={(e) => { if (e.button !== 0) return; e.preventDefault(); if (running) jump.current = true; }} />
       {countdown > 0 && <div className="countdown-overlay" aria-live="polite">
         <span>FIND YOUR RHYTHM</span><strong key={countdown}>{countdown}</strong>
         <small>{canDuck ? "↑ Jump · Hold ↓ to duck" : "Get ready to jump."}</small>
@@ -109,7 +113,7 @@ export default function GameCanvas({ ticket, onFinish, onScore, onCancel }: {
         <div className="control-buttons">
           {canDuck && <Button type="button" data-duck-control className={`duck-button${held ? " is-held" : ""}`} disabled={!running}
             aria-label="Hold to duck" aria-pressed={held}
-            onPointerDown={(e) => { e.preventDefault(); if (!running) return; e.currentTarget.setPointerCapture(e.pointerId); duckPointers.current.add(e.pointerId); setHeld(true); }}
+            onPointerDown={(e) => { if (e.button !== 0) return; e.preventDefault(); if (!running) return; e.currentTarget.setPointerCapture(e.pointerId); duckPointers.current.add(e.pointerId); setHeld(true); }}
             onPointerUp={(e) => releasePointer(e.pointerId)} onPointerCancel={(e) => releasePointer(e.pointerId)} onLostPointerCapture={(e) => releasePointer(e.pointerId)}
             onContextMenu={(e) => e.preventDefault()}
             onKeyDown={(e) => { if (e.code === "Space" || e.code === "Enter") { e.preventDefault(); if (running) { duckKeys.current.add(e.code); setHeld(true); } } }}
@@ -118,7 +122,7 @@ export default function GameCanvas({ ticket, onFinish, onScore, onCancel }: {
             <ArrowDown size={19} /> <span>Duck<small>HOLD</small></span>
           </Button>}
           <Button type="button" className="jump-button" disabled={!running} aria-label="Jump"
-            onPointerDown={(e) => { e.preventDefault(); if (running) jump.current = true; }}
+            onPointerDown={(e) => { if (e.button !== 0) return; e.preventDefault(); if (running) jump.current = true; }}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.repeat && running) jump.current = true; }}>
             <ArrowUp size={20} /> Jump
           </Button>

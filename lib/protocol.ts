@@ -99,9 +99,10 @@ export function inputSummary(log: string | null) {
   if (!log) return "Input log expired";
   try {
     const value = JSON.parse(log);
-    if (Array.isArray(value)) return `${value.length} jumps · classic`;
+    const count = (n: number, label: string) => `${n} ${label}${n === 1 ? "" : "s"}`;
+    if (Array.isArray(value)) return `${count(value.length, "jump")} · classic`;
     if (Array.isArray(value?.jumps) && Array.isArray(value?.ducks))
-      return `${value.jumps.length} jumps · ${Math.ceil(value.ducks.length / 2)} duck holds`;
+      return `${count(value.jumps.length, "jump")} · ${count(Math.ceil(value.ducks.length / 2), "duck hold")}`;
   } catch { /* Keep historical run review usable if a log is malformed. */ }
   return "Input log unavailable";
 }

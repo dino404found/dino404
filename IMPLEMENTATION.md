@@ -1,6 +1,6 @@
 # DINO404 — Catatan implementasi dan serah terima
 
-Tanggal: 28 September 2026. Acuan: `docs/MASTERPLAN.md`, salinan masterplan workspace. Dokumen ini mencatat yang sudah diimplementasikan serta batas verifikasinya; status domain dan hadiah tidak dianggap selesai hanya karena kode sudah tersedia.
+Tanggal: 29 September 2026. Acuan: `docs/MASTERPLAN.md`, salinan masterplan workspace. Dokumen ini mencatat yang sudah diimplementasikan serta batas verifikasinya; status domain dan hadiah tidak dianggap selesai hanya karena kode sudah tersedia.
 
 ## Hasil implementasi
 
@@ -29,7 +29,8 @@ Tanggal: 28 September 2026. Acuan: `docs/MASTERPLAN.md`, salinan masterplan work
 - Input yang terjadi setelah batas UTC tidak diterima untuk hari sebelumnya. Tenggat submit/retry adalah 60 detik setelah akhir run dan tidak melewati grace period hari.
 - Skor yang gagal dikirim dapat dicoba lagi dari layar hasil; payload pending disimpan lokal sementara. Backend menerima submit identik secara idempotent.
 - Finalisasi hari dilakukan setelah 00:01 UTC pada akses berikutnya; tidak memerlukan tab terbuka tepat tengah malam. Rekap historis juga dapat difinalisasi saat dibuka owner.
-- Koreksi owner mengecualikan run dengan alasan, mengembalikan rekor valid berikutnya untuk wallet tersebut, lalu membuat revisi hasil baru. Gunakan CSV revisi terbaru untuk pembagian manual.
+- Koreksi owner mengecualikan run dengan alasan, mengembalikan rekor valid berikutnya untuk wallet tersebut, lalu membuat revisi hasil baru dalam satu transaksi. Request review bersamaan dan retry hanya membuat satu koreksi/audit. Gunakan CSV revisi terbaru untuk pembagian manual.
+- Rekor pribadi dibatasi wallet dan hari UTC; respons lama tidak boleh menimpa hasil request atau submit terbaru. Panel owner mengabaikan respons yang kalah urutan dan membatasi waktu tunggu request.
 - Leaderboard publik hanya memuat nama dan alamat singkat. Alamat lengkap serta audit hanya tersedia di API owner.
 - Nama aman dari markup; CSV menetralkan awalan formula dan mengutip nilai dengan benar. Alamat hanya diperiksa format/nonzero, bukan kepemilikan atau dukungan aset pada penyedia wallet.
 - Input log yang melewati 30 hari dibersihkan pada maintenance permintaan berikutnya; catatan hasil dan audit tetap tersedia.
@@ -38,9 +39,9 @@ Tanggal: 28 September 2026. Acuan: `docs/MASTERPLAN.md`, salinan masterplan work
 
 ### Otomatis
 
-- **31 tes core lulus:** bootstrap database dan migrasi deployment berulang, identitas, UTC, single-jump, tabrakan tiga ketinggian drone, duck/stand/fast-fall, replay jump–duck, log input invalid, batas waktu, pending tiket 1.0, skor server, CSV, SQL rekor/tie/snapshot, indeks, pola rintangan, dan preservasi data saat rollout pre-season. Strategi jump–duck diuji pada 20 seed hingga 40.000 tick/kecepatan maksimum dengan replay identik; generator diperiksa pada 50 seed.
+- **35 tes core lulus:** bootstrap database dan migrasi deployment berulang, identitas, UTC, single-jump, tabrakan tiga ketinggian drone, duck/stand/fast-fall, replay jump–duck, log input invalid, batas waktu, pending tiket 1.0, skor server, CSV, SQL rekor/tie/snapshot/review atomik, respons tertunda dan scope wallet/hari, indeks, pola rintangan, dan preservasi data saat rollout pre-season. Strategi jump–duck diuji pada 20 seed hingga 40.000 tick/kecepatan maksimum dengan replay identik; generator diperiksa pada 50 seed.
 - **12 pemeriksaan API lulus pada development dan preview build produksi lokal:** jam kompetisi, proteksi admin, input invalid termasuk log duck, cross-origin ditolak, tiket, skor palsu, submit bersamaan dengan input duck, normalisasi wallet, privasi leaderboard, tanggal invalid, dan akses CSV anonim.
-- **6 pemeriksaan admin/CSV lulus pada development dengan autentikasi lokal:** rekap final, tepat top 3, alamat lengkap, eksklusi, revisi/audit, CSV terbaru, serta penolakan ekspor sebelum hari berakhir.
+- **7 pemeriksaan admin/CSV lulus pada development dengan autentikasi lokal:** rekap final, tepat top 3, alamat lengkap, eksklusi bersamaan, retry idempotent, revisi/audit, CSV terbaru, serta penolakan ekspor sebelum hari berakhir.
 - TypeScript `tsc --noEmit` dan ESLint kode aplikasi lulus; build Worker produksi berhasil.
 - Kasus koneksi proxy lokal setelah penolakan origin diperbaiki: body JSON yang dibatasi ukurannya dikonsumsi sebelum origin ditolak; tes API produksi melewati urutan penolakan lalu submit valid tanpa retry tersembunyi.
 - Deployment awal mengungkap bahwa hosting menyediakan binding database tanpa menjalankan migrasi awal secara otomatis. Bootstrap schema v1 ditambahkan dari file migrasi yang sama: hanya `CREATE TABLE/INDEX IF NOT EXISTS`, satu batch D1, sekali per Worker isolate. Data yang sudah ada dipertahankan; migrasi schema masa depan tetap harus dikelola eksplisit.
@@ -54,6 +55,7 @@ Tanggal: 28 September 2026. Acuan: `docs/MASTERPLAN.md`, salinan masterplan work
 - Update 2.0 diperiksa pada desktop 1280 × 900 dan mobile 390 × 844: dua candle awal dilewati dengan keyboard, drone tengah terlihat, petunjuk duck terbaca, hasil kembali terverifikasi. Tombol mobile berukuran sekitar 148 × 48 px. Screenshot ada di folder `../artifacts/` dan menggunakan data QA lokal.
 - WebMCP `read_daily_leaderboard` diuji membaca data yang sama dengan tampilan; argumen di luar skema ditolak. Tool ini tidak mengirim skor atau bermain.
 - Akun/wallet QA bersifat sintetis dan hanya berada di database lokal. Database lokal tidak dibundel untuk deployment.
+- Audit lanjutan memeriksa pergantian wallet/hari, Space pada tombol rules ketika game aktif, dan navigasi tanggal hasil owner. Reproduksi bug dan batas bukti dicatat di `docs/DEBUG-AUDIT.md`.
 
 ## Batas yang tetap perlu diketahui
 

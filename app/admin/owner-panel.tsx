@@ -1,6 +1,6 @@
 "use client";
 /* eslint-disable @next/next/no-html-link-for-pages -- Leaving the owner area intentionally starts a fresh game document without the Vinext client router. */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Download, ArrowLeft, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,48 +40,64 @@ type Detail = {
   entries: Entry[];
   audit: { at: number; action: string; target: string; reason: string }[];
 };
+async function ownerFetch(path: string, options?: RequestInit) {
+  return fetch(path, { ...options, signal: AbortSignal.timeout(12000), cache: "no-store" });
+}
 export default function OwnerPanel() {
   const [days, setDays] = useState<Day[]>([]),
     [day, setDay] = useState(""),
     [detail, setDetail] = useState<Detail | null>(null),
     [error, setError] = useState(""),
     [loading, setLoading] = useState(false),
+    [daysLoaded, setDaysLoaded] = useState(false),
     [review, setReview] = useState<Entry | null>(null),
     [reason, setReason] = useState("");
+  const loadRequest = useRef(0), excludeLock = useRef(false);
   async function load(date: string) {
+    const request = ++loadRequest.current;
     setLoading(true);
+    setDetail(null);
     setError("");
     try {
-      const r = await fetch(`/api/admin/results/${date}`);
+      const r = await ownerFetch(`/api/admin/results/${date}`);
       const d = (await r.json()) as Detail & { error?: string };
       if (!r.ok) throw new Error(d.error);
+      if (request !== loadRequest.current) return;
       setDetail(d);
     } catch (e) {
+      if (request !== loadRequest.current) return;
       setDetail(null);
       setError((e as Error).message);
     } finally {
-      setLoading(false);
+      if (request === loadRequest.current) setLoading(false);
     }
   }
   useEffect(() => {
-    void fetch("/api/admin/results")
+    let disposed = false;
+    const requests = loadRequest;
+    void ownerFetch("/api/admin/results")
       .then(async (r) => {
         const d = (await r.json()) as { days: Day[]; error?: string };
         if (!r.ok) throw new Error(d.error);
+        if (disposed) return;
         setDays(d.days);
         if (d.days[0]) {
           setDay(d.days[0].day);
           void load(d.days[0].day);
         }
       })
-      .catch((e) => setError(e.message));
+      .catch((e) => { if (!disposed) setError(e.message); })
+      .finally(() => { if (!disposed) setDaysLoaded(true); });
+    return () => { disposed = true; requests.current++; };
   }, []);
   async function exclude() {
-    if (!review) return;
+    if (!review || !detail || excludeLock.current) return;
+    const reviewedDay = detail.info.day;
+    excludeLock.current = true;
     setLoading(true);
     setError("");
     try {
-      const r = await fetch(`/api/admin/runs/${review.run_id}/review`, {
+      const r = await ownerFetch(`/api/admin/runs/${review.run_id}/review`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reason }),
@@ -90,10 +106,12 @@ export default function OwnerPanel() {
       if (!r.ok) throw new Error(d.error);
       setReview(null);
       setReason("");
-      await load(day);
+      setDay(reviewedDay);
+      await load(reviewedDay);
     } catch (e) {
       setError((e as Error).message);
     } finally {
+      excludeLock.current = false;
       setLoading(false);
     }
   }
@@ -120,6 +138,7 @@ export default function OwnerPanel() {
             id="result-date"
             type="date"
             value={day}
+            disabled={loading || !daysLoaded}
             max={new Date().toISOString().slice(0, 10)}
             onChange={(e) => setDay(e.target.value)}
           />
@@ -132,7 +151,8 @@ export default function OwnerPanel() {
           <RefreshCw size={16} /> Load results
         </Button>
       </div>
-      {days.length === 0 && !error && (
+      {!daysLoaded && !error && <p role="status">Loading competition dates…</p>}
+      {daysLoaded && days.length === 0 && !error && (
         <p>No competition days yet. Play the first run to get started.</p>
       )}
       {error && (

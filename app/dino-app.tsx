@@ -40,6 +40,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import GameCanvas from "./game-canvas";
 import DinoMascot from "./dino-mascot";
 import { supportedVersion } from "@/lib/game";
+import { personalStanding, isCurrentResponse, type PersonalRecord } from "@/lib/standings";
 import {
   identity,
   shortWallet,
@@ -75,7 +76,7 @@ type Result = {
   improved: boolean;
   day: string;
 };
-type Pending = { ticket: RunTicket; payload: RunPayload; score: number };
+type Pending = { ticket: RunTicket; payload: RunPayload; score: number; wallet?: string };
 class ApiError extends Error {
   constructor(
     public status: number,
@@ -129,7 +130,8 @@ export default function DinoApp() {
     [wallet, setWallet] = useState(""),
     [confirmed, setConfirmed] = useState(false);
   const [competition, setCompetition] = useState<Competition | null>(null),
-    [board, setBoard] = useState<Leaderboard | null>(null);
+    [boardData, setBoard] = useState<Leaderboard | null>(null);
+  const board = competition && boardData?.day !== competition.day ? null : boardData;
   const [loadError, setLoadError] = useState(""),
     [boardError, setBoardError] = useState(""),
     [error, setError] = useState("");
@@ -138,8 +140,8 @@ export default function DinoApp() {
   >("ready");
   const [ticket, setTicket] = useState<RunTicket | null>(null),
     [score, setScore] = useState(0),
-    [best, setBest] = useState(0),
-    [rank, setRank] = useState<number | null>(null);
+    [personalRecord, setPersonalRecord] = useState<PersonalRecord | null>(null);
+  const { score: best, rank } = personalStanding(personalRecord, wallet, competition?.day);
   const [result, setResult] = useState<Result | null>(null),
     [pending, setPending] = useState<Pending | null>(null),
     [submitting, setSubmitting] = useState(false);
@@ -151,47 +153,55 @@ export default function DinoApp() {
     walletRef = useRef(wallet),
     competitionRef = useRef(competition),
     startLock = useRef(false),
-    submitLock = useRef(false);
+    submitLock = useRef(false),
+    boardRequest = useRef(0),
+    competitionRequest = useRef(0),
+    bestRequest = useRef(0);
   useEffect(() => {
     phaseRef.current = phase;
     walletRef.current = wallet;
     competitionRef.current = competition;
   }, [phase, wallet, competition]);
   const loadBoard = useCallback(async () => {
+    const request = ++boardRequest.current;
     try {
       const data = await api<Leaderboard>("/api/leaderboard");
+      if (!isCurrentResponse(request, boardRequest.current, data.day, competitionRef.current?.day)) return;
       setBoard(data);
       setBoardError("");
     } catch (e) {
-      setBoardError(errorText(e));
+      if (request === boardRequest.current) setBoardError(errorText(e));
     }
   }, []);
   const loadCompetition = useCallback(async () => {
+    const request = ++competitionRequest.current;
     try {
       const data = await api<Competition>("/api/competition");
+      if (!isCurrentResponse(request, competitionRequest.current, data.day, competitionRef.current?.day)) return null;
       syncRef.current = { server: data.serverNow, local: performance.now() };
+      competitionRef.current = data;
       setCompetition(data);
       setLoadError("");
       return data;
     } catch (e) {
-      setLoadError(errorText(e));
+      if (request === competitionRequest.current) setLoadError(errorText(e));
       return null;
     }
   }, []);
   const loadBest = useCallback(async (w: string) => {
+    const request = ++bestRequest.current;
     if (!/^0x[0-9a-fA-F]{40}$/.test(w)) {
-      setBest(0);
-      setRank(null);
+      setPersonalRecord(null);
       return;
     }
     try {
-      const data = await api<{ score: number; rank: number | null }>(
+      const data = await api<{ day: string; score: number; rank: number | null }>(
         "/api/player",
         { wallet: w },
       );
-      if (walletRef.current.toLowerCase() === w.toLowerCase()) {
-        setBest(data.score);
-        setRank(data.rank);
+      if (walletRef.current.toLowerCase() === w.toLowerCase() &&
+          isCurrentResponse(request, bestRequest.current, data.day, competitionRef.current?.day)) {
+        setPersonalRecord({ ...data, wallet: w.toLowerCase() });
       }
     } catch {
       /* The leaderboard still reports its own availability. */
@@ -250,8 +260,6 @@ export default function DinoApp() {
       if (seconds === 0 && !resetting) {
         resetting = true;
         void loadCompetition().then(() => {
-          setBest(0);
-          setRank(null);
           void loadBoard();
           void loadBest(walletRef.current);
           resetting = false;
@@ -268,10 +276,11 @@ export default function DinoApp() {
       ) {
         void loadBoard();
         void loadCompetition();
+        void loadBest(walletRef.current);
       }
     }, 30000);
     return () => clearInterval(t);
-  }, [loadBoard, loadCompetition]);
+  }, [loadBoard, loadCompetition, loadBest]);
   useEffect(() => {
     // Feature-detected, read-only WebMCP tool: the same daily data shown in the UI.
     const context = (
@@ -307,9 +316,12 @@ export default function DinoApp() {
                 Object.keys(input).length
               )
                 throw new Error("Expected an empty object.");
+              const request = ++boardRequest.current;
               const data = await api<Leaderboard>("/api/leaderboard");
-              setBoard(data);
-              setBoardError("");
+              if (isCurrentResponse(request, boardRequest.current, data.day, competitionRef.current?.day)) {
+                setBoard(data);
+                setBoardError("");
+              }
               return data;
             },
           },
@@ -386,11 +398,14 @@ export default function DinoApp() {
         p.payload,
       );
       setResult(value);
+      setScore(value.score);
       setPending(null);
       removeLocal("dino404.pending");
-      if (value.day === competitionRef.current?.day) {
-        setBest(value.best);
-        setRank(value.rank);
+      if (p.wallet === walletRef.current.toLowerCase() && value.day === competitionRef.current?.day) {
+        bestRequest.current++;
+        setPersonalRecord({ wallet: p.wallet, day: value.day, score: value.best, rank: value.rank });
+      } else {
+        void loadBest(walletRef.current);
       }
       void loadBoard();
     } catch (e) {
@@ -409,7 +424,7 @@ export default function DinoApp() {
   }
   function finish(payload: RunPayload, finalScore: number) {
     if (!ticket) return;
-    const p = { ticket, payload, score: finalScore };
+    const p = { ticket, payload, score: finalScore, wallet: wallet.toLowerCase() };
     setScore(finalScore);
     setPhase("result");
     setFinishReason(payload.reason);
@@ -554,12 +569,17 @@ export default function DinoApp() {
                   </div>
                   {finishReason === "interrupted" && (
                     <p className="result-hint">
-                      Run ended when the game lost focus.
+                      The run ended after an interruption.
                     </p>
                   )}
                   {finishReason === "day-end" && (
                     <p className="result-hint">
                       The UTC day ended. Your next run starts fresh.
+                    </p>
+                  )}
+                  {result && competition && result.day !== competition.day && (
+                    <p className="result-hint">
+                      Recorded for {result.day} UTC. Today’s leaderboard has reset.
                     </p>
                   )}
                   {finishReason === "time-limit" && (
@@ -676,8 +696,9 @@ export default function DinoApp() {
                       value={wallet}
                       onChange={(e) => {
                         setWallet(e.target.value);
-                        setBest(0);
-                        setRank(null);
+                        walletRef.current = e.target.value;
+                        bestRequest.current++;
+                        setPersonalRecord(null);
                         setConfirmed(false);
                       }}
                       disabled={phase === "starting"}
