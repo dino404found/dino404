@@ -17,7 +17,8 @@ for (let y = 0; y < 47; y++) {
     if (shade >= 0) paths[shade] += `M${start} ${y}h${x - start}v1H${start}z`;
   }
 }
-const shape = `<path fill="#18392d" d="${paths[0]}"/><path fill="#8fc02f" d="${paths[1]}"/>`;
+const badge = '<path fill="#18392d" d="M21 23h7v7h-7z"/><path fill="#b8d58b" d="M22 24h2v2h-2zM25 24h2v2h-2zM22 27h2v2h-2zM25 27h2v2h-2z"/>';
+const shape = `<path fill="#18392d" d="${paths[0]}"/><path fill="#8fc02f" d="${paths[1]}"/>${badge}`;
 const mark = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 47" shape-rendering="crispEdges">${shape}</svg>\n`;
 const icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56" shape-rendering="crispEdges"><rect width="56" height="56" rx="10" fill="#eef2e2"/><g transform="translate(6 4)">${shape}</g></svg>\n`;
 await writeFile("public/assets/dino-mark.svg", mark);

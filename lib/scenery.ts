@@ -30,8 +30,8 @@ function luminance(hex: string) {
   const rgb = [1, 3, 5].map(k => { const n = parseInt(hex.slice(k, k + 2), 16) / 255; return n <= 0.04045 ? n / 12.92 : ((n + 0.055) / 1.055) ** 2.4; });
   return rgb[0] * 0.2126 + rgb[1] * 0.7152 + rgb[2] * 0.0722;
 }
-export function sceneColors(distance: number) {
-  const zone = zoneAt(distance), blend = smooth(((distance % 7000) / 7000 - 0.85) / 0.15), darkness = nightAt(distance);
+export function sceneColors(distance: number, score = distance / 12) {
+  const zone = zoneAt(distance), blend = smooth(((distance % 7000) / 7000 - 0.85) / 0.15), darkness = nightAt(score * 12);
   const colors = {} as Record<keyof typeof night, string>;
   for (const key of Object.keys(night) as (keyof typeof night)[]) {
     const daylight = mix(day[zone][key], day[(zone + 1) % 3][key], blend);

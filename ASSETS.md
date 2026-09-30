@@ -11,6 +11,7 @@ The exact classic dinosaur frames are loaded from the Chromium sprite sheet. DIN
 - Retrieved: 2026-09-28. The downloaded files are included locally; the game does not hotlink them.
 - Version 2.0 also uses the original duck frames and cloud from the same atlas. Frame geometry was checked against Chromium's `components/neterror/resources/dino_game/trex.ts`; the 59 × 47 source frame contains a 25-pixel-tall duck body. No new external asset download is required.
 - Each dinosaur frame is copied into its own cached canvas before scaling or drawing a shadow. This prevents neighboring atlas pixels from appearing as a stray line in front of the mouth. The underlying pixel geometry is unchanged.
+- Version 3.0 overlays an original seven-pixel-wide four-square badge inside the dinosaur's body. The licensed silhouette is retained; the badge is also present in the generated header/browser marks. Optional gate corners, relay indicators and signal feedback are code-native game graphics.
 
 The Chromium license permits redistribution and modification subject to its notice and other conditions. It does not grant endorsement by Google. DINO404 does not claim Google or Robinhood affiliation.
 

@@ -60,6 +60,8 @@ Tanggal: 29 September 2026. Acuan: `docs/MASTERPLAN.md`, salinan masterplan work
 
 Polishing sprite/identitas pada 30 September 2026 mengisolasi tujuh frame sebelum scaling/shadow untuk menghilangkan garis di depan mulut, menyamakan ikon tab/header dengan dino game, menambahkan kedipan idle ringan dan feedback tombol. **37 tes core**, TypeScript, ESLint, dan build kembali lulus. Perbandingan renderer sebelum/sesudah, layout desktop/HP dan run lokal terverifikasi diperiksa; rincian di `docs/SPRITE-POLISH.md`. Suite API/admin tidak diulang karena tidak ada perubahan protokol, database atau physics.
 
+Update Signal Gate 3.0 pada 30 September 2026 menambah bonus +20 hasil replay server, empat relay yang menyala, badge dino dan feedback sinyal. **41 tes core** dan **13 pemeriksaan API** lulus, termasuk bonus palsu yang diabaikan server, gate hanya membayar sekali, pola rintangan identik dengan v2 pada 20 seed, urutan waktu skor, dan tiket lama. TypeScript, ESLint dan build produksi lulus. Satu gate diambil lewat tombol Jump pada browser lokal; run selesai dengan total 149 dan diterima leaderboard. Detail dan batas verifikasi ada di `docs/SIGNAL-GATE.md`.
+
 ## Batas yang tetap perlu diketahui
 
 - Server replay membuktikan konsistensi physics/waktu, bukan bahwa pemain manusia. Bot yang menghasilkan input valid masih mungkin; review top 3 tetap diperlukan sebelum hadiah.

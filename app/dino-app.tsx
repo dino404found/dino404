@@ -644,14 +644,14 @@ export default function DinoApp() {
             ) : (
               <div className="start-layout">
                 <div className="start-art">
-                  <span className="scene-label">404 / CONNECTION FOUND</span>
+                  <span className="scene-label">404 / SIGNAL LOST</span>
                   <div className="dino-display">
                     <DinoMascot />
                   </div>
                   <div className="art-caption">
-                    Same little dino.
+                    A little signal.
                     <br />
-                    <strong>A whole new run.</strong>
+                    <strong>A world coming alive.</strong>
                   </div>
                   <span className="scene-coordinates">
                     EST. 2026 · KEEP RUNNING
@@ -941,6 +941,11 @@ export default function DinoApp() {
                     30-minute limit, or at 00:00 UTC. There is no pause.
                   </li>
                   <li>
+                    Signal gates are optional. Jump through one for 20 bonus
+                    points and restore a relay. Missing a gate has no penalty.
+                    Your score combines distance points and verified gate bonuses.
+                  </li>
+                  <li>
                     Finish logs must reach the server within 60 seconds of the
                     run ending. Only activity before midnight counts toward the
                     old day.
@@ -978,8 +983,8 @@ export default function DinoApp() {
             <span>02</span>
             <h3>Jump the market.</h3>
             <p>
-              Clear the candles. Duck the drones. A little rhythm, a little good
-              timing.
+              Clear the candles. Duck the drones. Jump through signal gates for
+              +20 and watch the world reconnect.
             </p>
           </div>
           <div className="rule-item">

@@ -1,6 +1,7 @@
 import { GAME, zoneAt, type GameState } from "./game";
 import { sceneColors } from "./scenery";
-import { dinoFrame, type DinoPose } from "./dino-sprites";
+import { dinoFrame, drawSignalBadge, type DinoPose } from "./dino-sprites";
+import { renderSignalWorld, renderSignalGates, signalPulse } from "./render-signal";
 
 const cloudAtlases = new WeakMap<HTMLCanvasElement, HTMLCanvasElement[]>();
 
@@ -64,9 +65,10 @@ export function renderGame(canvas: HTMLCanvasElement, s: GameState, sprite: HTML
   }
   c.setTransform(canvas.width / GAME.width, 0, 0, canvas.height / GAME.height, 0, 0);
   c.imageSmoothingEnabled = false;
-  const z = zoneAt(s.distance), p = sceneColors(s.distance);
+  const z = zoneAt(s.distance), p = sceneColors(s.distance, s.score);
   const drift = reducedMotion ? 0 : s.distance;
   const wind = reducedMotion ? 0 : s.tick;
+  const signal = signalPulse(s);
   c.fillStyle = p.sky; c.fillRect(0, 0, GAME.width, GAME.height);
   // A quiet sky keeps the silhouette of each airborne hazard easy to read.
   c.fillStyle = "#d5e2bc"; c.globalAlpha = p.darkness * 0.7;
@@ -106,7 +108,7 @@ export function renderGame(canvas: HTMLCanvasElement, s: GameState, sprite: HTML
     if (z === 2) {
       const height = 15 + (i % 4) * 8;
       c.fillRect(x, 180 - height, 19 + (i % 2) * 8, height);
-      c.fillStyle = p.trees;
+      c.fillStyle = s.signals > i % 4 ? (p.darkness > 0.5 ? "#e0e9af" : "#e8efd2") : p.trees;
       for (let row = 0; row < Math.floor(height / 9) - 1; row++) { c.fillRect(x + 4, 185 - height + row * 8, 3, 2); c.fillRect(x + 12, 185 - height + row * 8, 3, 2); }
       c.fillStyle = p.nearTrees;
     } else if (z === 1 && i % 3 === 0) {
@@ -115,6 +117,7 @@ export function renderGame(canvas: HTMLCanvasElement, s: GameState, sprite: HTML
       tree(c, x, 181, 31 + (i % 3) * 5, i % 2 === 0, sway);
     }
   }
+  if (s.version === GAME.version) renderSignalWorld(c, s, p, reducedMotion);
   c.fillStyle = p.ground; c.fillRect(0, GAME.ground, GAME.width, GAME.height - GAME.ground);
   c.fillStyle = p.track; c.fillRect(0, GAME.ground, GAME.width, 2);
   c.fillStyle = p.soil; c.fillRect(0, GAME.ground + 2, GAME.width, 3);
@@ -156,6 +159,7 @@ export function renderGame(canvas: HTMLCanvasElement, s: GameState, sprite: HTML
       }
     }
   }
+  renderSignalGates(c, s, p, reducedMotion);
   const duck = s.ducking;
   const pose: DinoPose = s.dead && !duck ? "crashed" : duck ? (Math.floor(s.tick / 6) % 2 ? "duckRight" : "duckLeft") : s.y < 0 ? "idle" : Math.floor(s.tick / 6) % 2 ? "runRight" : "runLeft";
   const y = Math.round(GAME.ground - GAME.dinoH + s.y), width = duck ? GAME.duckW : GAME.dinoW;
@@ -163,12 +167,20 @@ export function renderGame(canvas: HTMLCanvasElement, s: GameState, sprite: HTML
   c.save(); c.shadowColor = "#375827"; c.shadowOffsetX = 1; c.shadowOffsetY = 1;
   // Chromium's duck frames are 59 x 47; the visible body is 25 pixels tall.
   c.drawImage(dinoFrame(sprite, pose), GAME.dinoX, y, width, 47); c.restore();
+  if (signal > 0) drawSignalBadge(c, GAME.dinoX, y, pose, true);
+  if (signal > 0 && !reducedMotion && !s.dead) {
+    for (let i = 0; i < 5; i++) {
+      c.globalAlpha = signal * (1 - i / 5) * 0.7; c.fillStyle = p.ink;
+      c.fillRect(GAME.dinoX - 7 - i * 9, y + 27 + (i % 2) * 4, 3, 3);
+    }
+    c.globalAlpha = 1;
+  }
   if (!reducedMotion && s.y === 0 && !s.dead) {
     c.fillStyle = p.detail;
     for (let i = 0; i < 3; i++) c.fillRect(GAME.dinoX - 8 - i * 7 - (s.tick % 8), GAME.ground - 2 - (i % 2) * 3, 3, 2);
   }
   const sinceClear = s.tick - s.lastClearTick;
-  if (!reducedMotion && sinceClear >= 0 && sinceClear < 22 && !s.dead) {
+  if (!reducedMotion && !signal && sinceClear >= 0 && sinceClear < 22 && !s.dead) {
     c.globalAlpha = 1 - sinceClear / 22; c.fillStyle = p.ink;
     c.font = "bold 8px ui-monospace, monospace"; c.fillText("CLEAR", GAME.dinoX + 6, y - 9 - sinceClear * 0.25); c.globalAlpha = 1;
   }

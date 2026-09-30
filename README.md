@@ -2,7 +2,9 @@
 
 Classic pixel runner, green candlestick obstacles, a daily UTC leaderboard, server replay validation, and private top-3 CSV exports. The product specification is in [`docs/MASTERPLAN.md`](docs/MASTERPLAN.md), copied from the workspace masterplan. Implementation decisions and verification are recorded in [`IMPLEMENTATION.md`](IMPLEMENTATION.md).
 
-## Gameplay 2.0
+## Gameplay 3.0 — Signal Gate
+
+Jump through optional four-corner signal gates for **+20** each. The first gate sits above the first candle; missing it has no penalty. Four collected gates restore the world's relay lights. The four-square dino badge, short pixel trail and SIGNAL FOUND feedback tie the game to the DINO404 identity. Distance and gate bonuses both contribute to the server-verified score.
 
 - Space / Arrow Up, tapping the arena, or Jump: single jump.
 - Hold Arrow Down / S or the Duck button: duck. Down while airborne lands faster; releasing restores standing.
@@ -96,6 +98,8 @@ The owner email has been configured privately for the registered Site using its 
 | `app/game-canvas.tsx` | Fixed-step run controller, input capture and interruption handling |
 | `lib/game.ts` | Shared deterministic physics and replay |
 | `lib/game-v1.ts` | Frozen classic simulation for already-issued 1.0.0 tickets |
+| `lib/game-v2.ts` | Frozen jump/duck simulation for already-issued 2.0.0 tickets |
+| `lib/render-signal.ts` | Optional gate graphics and reactive relay scenery |
 | `lib/render-game.ts` | Canvas rendering and runtime sprite palette |
 | `lib/scenery.ts` | Visual day/night cycle, zone palettes and readable scene ink |
 | `lib/protocol.ts` | Identity, UTC rules, run validation and CSV escaping |
@@ -115,7 +119,7 @@ Stack: React/TypeScript, Vinext/Vite, Cloudflare Worker-compatible server, D1 SQ
 
 The source is prepared for Sites dispatch authentication. Deploying directly to a different host requires an equivalent trusted identity gateway. Do not trust arbitrary client-supplied `oai-authenticated-user-*` headers on an unprotected origin. The private owner panel intentionally denies access without the trusted platform identity and permitted email.
 
-Reward days keep their original physics version until the next UTC day. Version 2.0 retains the 1.0 validator for pending runs and old-day tickets. While rewards are disabled, new tickets switch to 2.0 immediately; existing scores, seed and original run versions are preserved. Do not activate rewards partway through this pre-season transition day.
+Reward days keep their original simulation version until the next UTC day. Version 3.0 retains the 1.0 and 2.0 validators for pending runs and old-day tickets. While rewards are disabled, new tickets switch to 3.0 immediately; existing scores, seed and original run versions are preserved. Do not activate rewards partway through this pre-season transition day.
 
 The project registration does not mean that `dino404.xyz` is connected. Domain ownership/DNS, the exact reward contract, reward amounts, distribution schedule, and token pair are separate launch tasks for the owner.
 
@@ -125,8 +129,10 @@ Server replay rejects physically invalid runs and fabricated numeric scores. It 
 
 This implementation has automated tests and browser checks; that is not a guarantee of zero bugs. It has not been load-tested for a large public launch or physically tested on a real phone during this session. Review `IMPLEMENTATION.md` for measured results and remaining launch prerequisites.
 
-The landscape fades into forest night from 1,000 to 1,100 points and back to daylight from 2,000 to 2,100, repeating every 1,000 points. Clouds, mountain layers and trees move at different speeds; reduced motion freezes decorative movement. These are visual effects and do not change scores or collisions.
+The landscape fades into forest night from 1,000 to 1,100 total points (including bonuses) and back to daylight from 2,000 to 2,100, repeating every 1,000 points. Clouds, mountain layers and trees move at different speeds; reduced motion freezes decorative movement. Scene colors and relay lights do not alter collisions.
 
 The dinosaur's frames are isolated before scaling to prevent neighboring sprite pixels from bleeding into the image. The header and browser icons use the same idle silhouette. The waiting mascot blinks briefly; this pauses in hidden tabs and when reduced motion is enabled.
+
+See [`docs/SIGNAL-GATE.md`](docs/SIGNAL-GATE.md) for the current identity update, verification and a short try-it guide.
 
 See [`docs/SPRITE-POLISH.md`](docs/SPRITE-POLISH.md) for sprite/icon cleanup, [`docs/MAP-POLISH.md`](docs/MAP-POLISH.md) for landscape changes, and [`docs/DEBUG-AUDIT.md`](docs/DEBUG-AUDIT.md) for the preceding bug audit. See [`ASSETS.md`](ASSETS.md) for primary sources and shipped license notices.

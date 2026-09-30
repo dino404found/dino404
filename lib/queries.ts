@@ -4,4 +4,4 @@ export const FINALIZE_SNAPSHOT = "INSERT INTO daily_results (day,revision,rank,w
 
 export const FINALIZE_DAY = "UPDATE competition_days SET finalized_at=?,revision=revision+1 WHERE day=? AND finalized_at IS NULL AND closes_at+?<=?";
 
-export const ADVANCE_PRESEASON_VERSION = "UPDATE competition_days SET version=? WHERE day=? AND version='1.0.0' AND finalized_at IS NULL";
+export const ADVANCE_PRESEASON_VERSION = "UPDATE competition_days SET version=? WHERE day=? AND version IN ('1.0.0','2.0.0') AND finalized_at IS NULL";

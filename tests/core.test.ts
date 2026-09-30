@@ -7,8 +7,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
-import { GAME, createGame, replay, step, type Obstacle } from "../lib/game";
+import { GAME, SIGNAL, createGame, replay, step, type Obstacle } from "../lib/game";
 import { replay as replayV1 } from "../lib/game-v1";
+import { createGame as createV2, step as stepV2, replay as replayV2 } from "../lib/game-v2";
 import {
   csv,
   dayAt,
@@ -39,6 +40,13 @@ test("scenery keeps labels and drone ink readable through every fade and zone", 
       assert.ok(contrast >= 3, `Insufficient scene contrast at ${score}: ${contrast}`);
     }
   }
+});
+
+test("night milestones follow displayed total score including signal bonuses", () => {
+  assert.equal(sceneColors(900 * 12, 1000).darkness, 0);
+  assert.equal(sceneColors(1000 * 12, 1100).darkness, 1);
+  assert.equal(sceneColors(1900 * 12, 2000).darkness, 1);
+  assert.equal(sceneColors(2000 * 12, 2100).darkness, 0);
 });
 
 test("fresh hosted database initializes all tables and preserves data on repeated bootstrap", () => {
@@ -443,6 +451,55 @@ test("malformed duck logs, too many combined inputs and unknown versions are rej
   assert.throws(() => replay(1, 4000, Array.from({ length: 3100 }, (_, i) => i), Array.from({ length: 3100 }, (_, i) => i)));
   assert.throws(() => replay(1, 50, [], [], "99.0.0"));
 });
+
+test("signal gates reward a jump once, preserve obstacle patterns and replay exact bonus timing", () => {
+  for (let seed = 1; seed <= 20; seed++) {
+    const s = createGame(seed), old = createV2(seed), jumps: number[] = [], ducks: number[] = [];
+    while (s.tick < 6000 && !s.dead) {
+      const o = s.obstacles.find(o => o.x + o.w > GAME.dinoX);
+      const duck = !!o && o.kind === "mid" && o.x - GAME.dinoX < s.speed * 24;
+      const jump = !!o && (o.kind === "low" || o.kind === "candle") && s.y === 0 && o.x - GAME.dinoX < s.speed * 14;
+      if (jump) jumps.push(s.tick);
+      if (duck !== s.duckHeld) ducks.push(s.tick);
+      const count = s.signals, prevScore = s.score, prevScoreTick = s.scoreTick;
+      step(s, jump, duck); stepV2(old, jump, duck);
+      assert.deepEqual(s.obstacles, old.obstacles);
+      assert.equal(s.rng, old.rng); assert.equal(s.y, old.y); assert.equal(s.dead, old.dead);
+      assert.equal(s.score, old.score + s.signals * SIGNAL.bonus);
+      assert.ok(s.signals === count || s.signals === count + 1);
+      assert.equal(s.scoreTick, s.score === prevScore ? prevScoreTick : s.tick);
+      if (s.signals > count) { assert.ok(s.y < 0); assert.equal(s.lastSignalTick, s.tick); }
+    }
+    assert.ok(s.signals >= 4, `four relays must be reachable for seed ${seed}`);
+    assert.deepEqual(replay(seed, s.tick, jumps, ducks), s);
+    const verified = validateRun({ ...ticket, seed }, { ticks: s.tick, inputs: jumps, ducks, reason: "interrupted" }, start + s.tick * 1000 / 60 + 100);
+    assert.equal(verified.score, s.score);
+    assert.equal(verified.achievedAt, Math.floor(start + s.scoreTick * 1000 / 60));
+  }
+});
+
+test("missing a gate is harmless; dead or grounded dinos cannot collect; a collected gate cannot pay twice", () => {
+  const s = createGame(1); s.next = 10000;
+  s.gates = [{ id: 1, x: GAME.dinoX + 26 + GAME.initialSpeed, y: GAME.ground - 130 }];
+  step(s); assert.equal(s.signals, 0); assert.equal(s.dead, false);
+  s.gates[0].x = -30; step(s); assert.equal(s.gates.length, 0); assert.equal(s.bonus, 0);
+  s.y = -106; s.vy = 0;
+  s.gates = [{ id: 2, x: GAME.dinoX + 26 + s.speed, y: GAME.ground - 130 }];
+  step(s); assert.equal(s.signals, 1); assert.equal(s.bonus, 20); assert.equal(s.gates.length, 0);
+  for (let i = 0; i < 10; i++) step(s);
+  assert.equal(s.bonus, 20);
+  s.dead = true; const score = s.score;
+  s.gates = [{ id: 3, x: GAME.dinoX + 26, y: GAME.ground - 24 + s.y }];
+  step(s, true); assert.equal(s.bonus, 20); assert.equal(s.score, score);
+});
+
+test("v2 pending tickets retain distance-only scores and the original deterministic simulation", () => {
+  const old = replayV2(1, 230, [175], [], "2.0.0");
+  const current = replay(1, 230, [175], [], "2.0.0");
+  assert.deepEqual(current, { ...createGame(1, "2.0.0"), ...old });
+  assert.equal(current.bonus, 0); assert.equal(current.gates.length, 0);
+  assert.equal(validateRun({ ...ticket, version: "2.0.0" }, { ticks: 230, inputs: [175], reason: "interrupted" }, start + 4000).score, old.score);
+});
 test("pending classic tickets retain their original physics and reject duck inputs", () => {
   const legacy = replayV1(1, 240, []);
   assert.deepEqual(replay(1, 240, [], [], "1.0.0"), { ...createGame(1, "1.0.0"), ...legacy });
@@ -473,6 +530,10 @@ test("pre-season rollout preserves seed, scores and pending classic runs; finali
   assert.equal(day.seed, 77); assert.equal(day.version, GAME.version);
   assert.equal(db.prepare("SELECT score FROM daily_best").get()!.score, 123);
   assert.equal(db.prepare("SELECT version FROM runs WHERE id='pending'").get()!.version, "1.0.0");
+  db.exec("UPDATE competition_days SET version='2.0.0'");
+  db.prepare(ADVANCE_PRESEASON_VERSION).run(GAME.version, ticket.day);
+  assert.equal(db.prepare("SELECT version FROM competition_days").get()!.version, GAME.version);
+  assert.equal(db.prepare("SELECT score FROM daily_best").get()!.score, 123);
   db.exec("UPDATE competition_days SET version='1.0.0',finalized_at=1");
   db.prepare(ADVANCE_PRESEASON_VERSION).run(GAME.version, ticket.day);
   assert.equal(db.prepare("SELECT version FROM competition_days").get()!.version, "1.0.0");

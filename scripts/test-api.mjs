@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { build } from "esbuild";
+import { pathToFileURL } from "node:url";
+import { resolve } from "node:path";
 const base = process.env.TEST_ORIGIN ?? "http://localhost:5173";
 if (!/^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(base))
   throw new Error("API tests must use a local preview, never production.");
@@ -98,4 +101,22 @@ q = await request("/api/leaderboard?date=2026-02-30");
 check("invalid historical dates rejected", q.r.status === 400);
 q = await request(`/api/admin/results/${ticket.day}/export`);
 check("CSV cannot be downloaded anonymously", q.r.status === 401);
+// Verify the new bonus through a real server ticket. The log is simulated
+// locally, but real elapsed time is respected before submitting it.
+await build({ entryPoints: ["lib/game.ts"], outfile: ".sites-runtime/api-game.mjs", bundle: true, platform: "node", format: "esm" });
+const { GAME, createGame, step } = await import(pathToFileURL(resolve(".sites-runtime/api-game.mjs")).href);
+q = await request("/api/runs", { ...player, name: "Signal API", wallet: "0x" + "d".repeat(40) });
+assert.equal(q.r.status, 201);
+const signalTicket = q.data, signalState = createGame(signalTicket.seed, signalTicket.version), jumps = [];
+assert.equal(signalTicket.version, GAME.version);
+while (signalState.tick < 250 && !signalState.dead) {
+  const obstacle = signalState.obstacles.find(o => o.x + o.w > GAME.dinoX);
+  const jump = !!obstacle && signalState.y === 0 && obstacle.x - GAME.dinoX < signalState.speed * 14;
+  if (jump) jumps.push(signalState.tick);
+  step(signalState, jump);
+}
+assert.equal(signalState.signals, 1); assert.equal(signalState.dead, false);
+await new Promise(r => setTimeout(r, Math.max(0, signalTicket.startAt + signalState.tick * 1000 / GAME.hz + 100 - Date.now())));
+q = await request(`/api/runs/${signalTicket.id}/submit`, { ticks: signalState.tick, inputs: jumps, ducks: [], reason: "interrupted", score: 999999, bonus: 999999, signals: 999999 });
+check("server replays signal bonus and ignores fabricated bonus fields", q.r.ok && q.data.score === signalState.score && signalState.score === Math.floor(signalState.distance / 12) + 20);
 console.log(JSON.stringify({ passed: checks.length, checks }, null, 2));

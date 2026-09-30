@@ -872,3 +872,19 @@ Arahan lanjutan pemilik proyek berdasarkan screenshot arena: pertahankan gaya di
 - Candle, drone, dino, garis tanah dan petunjuk harus tetap jelas selama seluruh transisi. Dekorasi tetap di belakang lintasan.
 - Reduced motion menghentikan drift/parallax/goyangan dekoratif; perubahan warna bertahap tetap mengikuti progres skor tanpa kedipan atau efek kilat.
 - Perubahan ini visual saja: tidak mengubah physics, hitbox, pola rintangan, penilaian, validator, atau versi game 2.0.0. Tidak ada bonus, item, mekanik atau syarat hadiah baru.
+
+## 23. Amendemen identitas Signal Gate — 30 September 2026
+
+Pemilik menyetujui ketiga ide identitas: Signal Gate opsional, dunia yang merespons sinyal, dan badge empat kotak pada dino. Amendemen ini memperbarui batas visual-only pada bagian 22; perubahan scoring berikut disetujui secara eksplisit.
+
+- Tema: dino berlari mengembalikan sinyal. Bentuk klasik, warna hijau, kontrol lompat/nunduk, tempo, hitbox, dan pola rintangan tetap dipertahankan.
+- Signal Gate pertama berada di atas candle pertama. Gate selanjutnya muncul pada candle yang berjarak sedikitnya lima urutan rintangan dari gate sebelumnya. Posisi gate diturunkan dari pola deterministik; tidak menambah panggilan random yang mengubah obstacle.
+- Gate berbentuk empat sudut terbuka dengan inti empat kotak dan label +20, dibedakan dari candle/drone yang berbahaya. Dino harus berada di udara dan melewati pusat gate. Gate terlewat tidak menghentikan run dan tidak mengurangi skor; setiap gate hanya memberi bonus satu kali.
+- Total skor = poin jarak + 20 per gate. Bonus dihitung kembali oleh server dari input lompat/nunduk; nilai bonus yang diklaim client tidak dipercaya. Top 3, satu posisi per wallet dan tie berdasarkan waktu mencapai total skor tetap berlaku.
+- Empat sinyal pertama mengisi indikator relay. Status berubah dari FIND THE SIGNAL menjadi RECONNECTING lalu WORLD ONLINE. Gate berikutnya tetap memberi +20 tanpa menambah kontrol atau mekanik baru.
+- Saat gate didapat: SIGNAL FOUND +20, badge menyala sesaat, jejak pixel pendek, dan gelombang cahaya rendah di belakang lintasan. Menara relay, papan 404 dan jendela kota merespons progres sinyal. Semua dekorasi tetap tanpa hitbox.
+- Badge empat kotak kecil mengikuti pose berdiri, lari dan nunduk. Header dan favicon memakai badge yang sama; frame tetap diisolasi untuk mencegah garis pixel tetangga.
+- Reduced motion menonaktifkan gerak gate/dekorasi, jejak dan gelombang; status teks, pencahayaan relay dan penghitungan bonus tetap berfungsi. Tidak memakai suara otomatis, library animasi baru atau gambar jaringan.
+- Transisi malam tetap mulai skor total 1.000, termasuk bonus. Zona lanskap tetap mengikuti jarak.
+- Versi simulasi menjadi 3.0.0. Validator 1.0.0 dan 2.0.0 dipertahankan untuk tiket lama. Pre-season dapat berpindah versi tanpa menghapus skor/seed; hari berhadiah tetap memakai versi hari sampai UTC berikutnya.
+- Handoff wajib menunjukkan lokasi badge, cara mengambil gate pertama, indikator empat relay dan respons map; sertakan hasil pengecekan replay, bonus, kompatibilitas tiket dan tampilan HP.

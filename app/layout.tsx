@@ -7,11 +7,11 @@ export const metadata: Metadata = {
     "Jump the candles. Chase your daily best. A classic pixel runner with a new green world and a daily leaderboard.",
   icons: {
     icon: [
-      { url: "/favicon.svg?v=dino-2", type: "image/svg+xml", sizes: "any" },
-      { url: "/icon-32.png?v=dino-2", type: "image/png", sizes: "32x32" },
+      { url: "/favicon.svg?v=signal-3", type: "image/svg+xml", sizes: "any" },
+      { url: "/icon-32.png?v=signal-3", type: "image/png", sizes: "32x32" },
     ],
-    shortcut: "/favicon.ico?v=dino-2",
-    apple: { url: "/apple-touch-icon.png?v=dino-2", sizes: "180x180" },
+    shortcut: "/favicon.ico?v=signal-3",
+    apple: { url: "/apple-touch-icon.png?v=signal-3", sizes: "180x180" },
   },
 };
 

@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { GAME, createGame, step, hazardHint, zoneAt, ZONES } from "@/lib/game";
+import { GAME, SIGNAL, createGame, step, hazardHint, zoneAt, ZONES } from "@/lib/game";
 import { makeSprites, renderGame } from "@/lib/render-game";
 import { sceneColors } from "@/lib/scenery";
 import type { RunTicket, RunPayload } from "@/lib/protocol";
@@ -18,8 +18,10 @@ export default function GameCanvas({ ticket, onFinish, onScore, onCancel }: {
     finishRef = useRef(onFinish), scoreRef = useRef(onScore), cancelRef = useRef(onCancel);
   const [countdown, setCountdown] = useState(3), [running, setRunning] = useState(false),
     [held, setHeld] = useState(false), [hint, setHint] = useState("Jump the candles. Duck the drones."),
-    [zone, setZone] = useState<string>(ZONES[0]), [light, setLight] = useState("DAY RUN");
+    [zone, setZone] = useState<string>(ZONES[0]), [light, setLight] = useState("DAY RUN"),
+    [signals, setSignals] = useState(0), [signalFound, setSignalFound] = useState(false);
   const canDuck = ticket.version !== "1.0.0";
+  const canSignal = ticket.version === GAME.version;
   useEffect(() => { finishRef.current = onFinish; scoreRef.current = onScore; cancelRef.current = onCancel; }, [onFinish, onScore, onCancel]);
   useEffect(() => {
     const el = canvas.current!;
@@ -64,10 +66,11 @@ export default function GameCanvas({ ticket, onFinish, onScore, onCancel }: {
         if (Math.floor(s.tick / 6) !== lastHud) {
           lastHud = Math.floor(s.tick / 6); scoreRef.current(s.score);
           setHint(hazardHint(s)); setZone(ZONES[zoneAt(s.distance)]);
-          const colors = sceneColors(s.distance);
+          const colors = sceneColors(s.distance, s.score);
           for (const key of ["sky", "ground", "ridge"] as const) surface.current?.style.setProperty(`--scene-${key}`, colors[key]);
           surface.current?.style.setProperty("--scene-ink", colors.uiInk);
           setLight(colors.darkness < 0.02 ? "DAY RUN" : colors.darkness > 0.98 ? "NIGHT RUN" : Math.floor(s.score / 1000) % 2 ? "DUSK" : "DAWN");
+          setSignals(s.signals); setSignalFound(s.tick - s.lastSignalTick < SIGNAL.duration);
           setHeld(s.duckHeld);
         }
         if (s.dead) { renderGame(el, s, sprite, reduced); finish("collision"); return; }
@@ -106,8 +109,15 @@ export default function GameCanvas({ ticket, onFinish, onScore, onCancel }: {
   return (
     <div className="play-surface" ref={surface}>
       <div className="world-status"><span><i /> {zone}</span><span>{light}</span></div>
+      {canSignal && <div className={`signal-status${signalFound ? " is-found" : ""}`}>
+        <span className="signal-progress" aria-label={`${Math.min(4, signals)} of 4 relays restored`}>
+          <span className="signal-grid" aria-hidden="true">{[0, 1, 2, 3].map(i => <i key={i} className={signals > i ? "is-lit" : ""} />)}</span>
+          {signals >= 4 ? "WORLD ONLINE" : signals ? "RECONNECTING" : "FIND THE SIGNAL"}
+        </span>
+        <span role="status" aria-live="polite" aria-atomic="true">{signalFound ? "SIGNAL FOUND +20" : signals ? `${signals} GATES · +${signals * SIGNAL.bonus}` : "GATES +20"}</span>
+      </div>}
       <canvas ref={canvas} className="game-canvas" tabIndex={0}
-        aria-label="Runner arena. Space or Arrow Up to jump. Hold Arrow Down or S to duck; down in the air lands faster."
+        aria-label="Runner arena. Space or Arrow Up to jump. Hold Arrow Down or S to duck; down in the air lands faster. Jump through optional signal gates for 20 bonus points."
         onPointerDown={(e) => { if (e.button !== 0) return; e.preventDefault(); if (running) jump.current = true; }} />
       {countdown > 0 && <div className="countdown-overlay" aria-live="polite">
         <span>FIND YOUR RHYTHM</span><strong key={countdown}>{countdown}</strong>

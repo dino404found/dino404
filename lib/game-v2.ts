@@ -1,17 +1,14 @@
 import { createGame as createV1, step as stepV1, replay as replayV1, type GameState as StateV1 } from "./game-v1";
-import { step as stepV2, replay as replayV2 } from "./game-v2";
 
 /** Deterministic 60 Hz simulation, shared by the runner and server replay. */
 export const GAME = Object.freeze({
-  version: "3.0.0", hz: 60, width: 640, height: 240, ground: 184,
+  version: "2.0.0", hz: 60, width: 640, height: 240, ground: 184,
   dinoX: 60, dinoW: 44, dinoH: 47, duckW: 59, duckH: 25,
   gravity: 0.61, jump: -11.8, initialSpeed: 5, maxSpeed: 9, maxTicks: 108000,
 });
 export function supportedVersion(version: string) {
-  return version === GAME.version || version === "2.0.0" || version === "1.0.0";
+  return version === GAME.version || version === "1.0.0";
 }
-export const SIGNAL = Object.freeze({ bonus: 20, radius: 20, duration: 120, spacing: 5 });
-export type SignalGate = { id: number; x: number; y: number };
 export type Obstacle = {
   id: number; x: number; y: number; w: number; h: number;
   kind: "candle" | "low" | "mid" | "high"; group: number;
@@ -19,13 +16,11 @@ export type Obstacle = {
 export type GameState = Omit<StateV1, "obstacles"> & {
   version: string; ducking: boolean; duckHeld: boolean; obstacles: Obstacle[];
   cleared: number; lastClearTick: number;
-  gates: SignalGate[]; signals: number; bonus: number; lastSignalTick: number; nextSignalObstacle: number;
 };
 export function createGame(seed: number, version: string = GAME.version): GameState {
   if (!supportedVersion(version)) throw new Error("Unsupported game version.");
   return { ...createV1(seed), version, next: version === "1.0.0" ? 150 : 72,
-    ducking: false, duckHeld: false, cleared: 0, lastClearTick: -100,
-    gates: [], signals: 0, bonus: 0, lastSignalTick: -SIGNAL.duration, nextSignalObstacle: 1 };
+    ducking: false, duckHeld: false, cleared: 0, lastClearTick: -100 };
 }
 function random(s: GameState) {
   s.rng ^= s.rng << 13; s.rng ^= s.rng >>> 17; s.rng ^= s.rng << 5;
@@ -41,7 +36,6 @@ export function playerBoxes(s: GameState) {
 }
 export function step(s: GameState, jump = false, duck = false): void {
   if (s.version === "1.0.0") { stepV1(s as StateV1, jump); return; }
-  if (s.version === "2.0.0") { stepV2(s, jump, duck); return; }
   if (s.dead || s.tick >= GAME.maxTicks) return;
   s.duckHeld = duck;
   if (jump && !duck && s.y === 0) s.vy = GAME.jump;
@@ -54,7 +48,7 @@ export function step(s: GameState, jump = false, duck = false): void {
   s.tick++;
   s.speed = Math.min(GAME.maxSpeed, GAME.initialSpeed + s.tick / 9000);
   s.distance += s.speed;
-  const score = Math.floor(s.distance / 12) + s.bonus;
+  const score = Math.floor(s.distance / 12);
   if (score !== s.score) { s.score = score; s.scoreTick = s.tick; }
   if (s.tick >= s.next) {
     const ordinal = s.count + 1, r = random(s);
@@ -70,13 +64,6 @@ export function step(s: GameState, jump = false, duck = false): void {
     s.obstacles.push({ id: ++s.count, x: GAME.width + 28,
       y: kind === "high" ? GAME.ground - 111 : kind === "mid" ? GAME.ground - 60 : kind === "low" ? GAME.ground - 31 : GAME.ground - h,
       w: drone ? 46 : 20 + (group - 1) * 24, h, kind, group });
-    // Gates share a candle's path, above its hazard. No extra random calls:
-    // obstacle patterns stay identical to v2, and every player sees the same gates.
-    if (!drone && s.count >= s.nextSignalObstacle) {
-      const candle = s.obstacles[s.obstacles.length - 1];
-      s.gates.push({ id: candle.id, x: candle.x + candle.w / 2, y: GAME.ground - 130 });
-      s.nextSignalObstacle = s.count + SIGNAL.spacing;
-    }
     s.next = s.tick + Math.max(76, 104 - Math.floor(s.tick / 1200) * 3) + Math.floor(random(s) * 37);
   }
   for (const o of s.obstacles) {
@@ -90,16 +77,6 @@ export function step(s: GameState, jump = false, duck = false): void {
   for (const d of playerBoxes(s)) for (const o of s.obstacles) {
     if (d.x < o.x + o.w - 3 && d.x + d.w > o.x + 3 && d.y < o.y + o.h - 2 && d.y + d.h > o.y + 2) s.dead = true;
   }
-  s.gates = s.gates.filter(g => {
-    g.x -= s.speed;
-    const dx = g.x - (GAME.dinoX + 26), dy = g.y - (GAME.ground - 24 + s.y);
-    if (!s.dead && s.y < 0 && dx * dx + dy * dy <= SIGNAL.radius ** 2) {
-      s.signals++; s.bonus += SIGNAL.bonus; s.score += SIGNAL.bonus;
-      s.scoreTick = s.tick; s.lastSignalTick = s.tick;
-      return false;
-    }
-    return g.x > -SIGNAL.radius;
-  });
 }
 function checkSequence(inputs: number[], ticks: number) {
   if (!Array.isArray(inputs) || inputs.length > 6000) throw new Error("Invalid input log.");
@@ -117,7 +94,6 @@ export function replay(seed: number, ticks: number, inputs: number[], ducks: num
     if (ducks.length) throw new Error("This game version does not support ducking.");
     return { ...createGame(seed, version), ...replayV1(seed, ticks, inputs) };
   }
-  if (version === "2.0.0") return { ...createGame(seed, version), ...replayV2(seed, ticks, inputs, ducks, version) };
   const s = createGame(seed, version);
   let i = 0, d = 0, held = false;
   while (s.tick < ticks && !s.dead) {
@@ -130,9 +106,7 @@ export function replay(seed: number, ticks: number, inputs: number[], ducks: num
   return s;
 }
 export function hazardHint(s: GameState) {
-  if (s.version === GAME.version && s.tick - s.lastSignalTick < SIGNAL.duration) return `SIGNAL FOUND · +${SIGNAL.bonus} points`;
   const o = s.obstacles.find((o) => o.x + o.w > GAME.dinoX && o.x < GAME.width);
-  if (o?.kind === "candle" && s.gates.some(g => g.id === o.id && g.x < GAME.width)) return "SIGNAL GATE · Jump through for +20";
   if (!o || o.id > 8) return "Find your rhythm. Beat your best.";
   if (o.kind === "mid") return "MID DRONE · Hold ↓ to duck";
   if (o.kind === "low") return "LOW DRONE · Jump over";

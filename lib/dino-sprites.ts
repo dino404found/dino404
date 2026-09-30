@@ -20,6 +20,16 @@ export function dinoFrame(atlas: HTMLCanvasElement, pose: DinoPose) {
   const frame = document.createElement("canvas"); frame.width = width; frame.height = 47;
   // Copy exact pixels. Sampling/shadows can otherwise bleed from the next frame.
   frame.getContext("2d")!.putImageData(atlas.getContext("2d")!.getImageData(848 + offset, 2, width, 47), 0, 0);
+  drawSignalBadge(frame.getContext("2d")!, 0, 0, pose);
   cache[pose] = frame;
   return frame;
+}
+
+/** Four pixels of signal: the same little badge on every dinosaur pose. */
+export function drawSignalBadge(c: CanvasRenderingContext2D, x: number, y: number, pose: DinoPose, powered = false) {
+  const duck = pose === "duckLeft" || pose === "duckRight";
+  const xx = x + (duck ? 25 : 21), yy = y + (duck ? 29 : 23);
+  c.fillStyle = "#18392d"; c.fillRect(xx, yy, 7, 7);
+  c.fillStyle = powered ? "#f1ffd2" : "#b8d58b";
+  for (let i = 0; i < 4; i++) c.fillRect(xx + 1 + (i % 2) * 3, yy + 1 + Math.floor(i / 2) * 3, 2, 2);
 }
