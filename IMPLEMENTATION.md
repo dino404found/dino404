@@ -68,6 +68,8 @@ Update motion/identitas UI pada 30 September 2026 menghubungkan form, persiapan 
 
 ## Batas yang tetap perlu diketahui
 
+Audit lokal setelah update motion pada 30 September 2026 memperbaiki fokus validasi nama/wallet/konfirmasi, retry rollover yang berulang tiap detik ketika sinkronisasi gagal, error koneksi yang tersembunyi pada hasil, dan klaim submit yang belum pasti ketika respons hilang. **45 tes core, 13 API produksi lokal, 7 admin/CSV, TypeScript, ESLint dan build lulus.** Browser membuktikan server menerima skor 77 meskipun respons pertama dibuat gagal, lalu retry mengonfirmasi satu posisi leaderboard. Banner desktop/HP tidak overflow dan memiliki kontras teks 7,94:1. Perubahan ini **belum dipublikasikan**; rincian dan batas bukti ada di `docs/DEBUG-AUDIT-MOTION.md`.
+
 - Server replay membuktikan konsistensi physics/waktu, bukan bahwa pemain manusia. Bot yang menghasilkan input valid masih mungkin; review top 3 tetap diperlukan sebelum hadiah.
 - Tanpa tanda tangan wallet, aplikasi tidak membuktikan kepemilikan alamat. Satu orang bisa memasukkan lebih dari satu wallet.
 - Belum diuji beban massal, perangkat fisik, atau seluruh kombinasi browser/perangkat. Tes lulus bukan jaminan nol bug.

@@ -1,6 +1,12 @@
 {
   "name": "dino404",
   "version": "0.1.0",
+  "author": "DINO404",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dino404found/dino404.git"
+  },
   "private": true,
   "engines": {
     "node": ">=22.13.0"

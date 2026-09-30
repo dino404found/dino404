@@ -15,6 +15,7 @@ import {
   dayAt,
   dayEnd,
   identity,
+  IdentityError,
   validateRun,
   validDay,
   inputSummary,
@@ -137,6 +138,19 @@ test("simulation replay gives identical score, state and collision", () => {
   assert.deepEqual(replayed, s);
   assert.ok(s.score > 0);
 });
+test("identity errors identify the field after normalization, without guessing by raw length", () => {
+  const validWallet = "0x" + "1".repeat(40);
+  for (const name of ["Green!", "   ", "ａ", "a".repeat(21)]) {
+    assert.throws(() => identity({ name, wallet: validWallet }),
+      (error: unknown) => error instanceof IdentityError && error.field === "name");
+  }
+  for (const wallet of ["0x123", "0x" + "0".repeat(40)]) {
+    assert.throws(() => identity({ name: "  Ｒｅｘ  ", wallet }),
+      (error: unknown) => error instanceof IdentityError && error.field === "wallet");
+  }
+  assert.deepEqual(identity({ name: "  Ｒｅｘ  ", wallet: ` ${validWallet} ` }), {name: "Rex", wallet: validWallet});
+});
+
 test("jump is single-height and cannot double jump", () => {
   const a = createGame(1),
     b = createGame(1);

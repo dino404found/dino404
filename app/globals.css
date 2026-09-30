@@ -348,6 +348,25 @@ h1 span {
 .field input::placeholder {
   color: #64735c;
 }
+.field input[aria-invalid="true"],
+.confirm-row [data-slot="checkbox"][aria-invalid="true"] {
+  border-color: #a3343c !important;
+}
+.connection-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 16px;
+  padding: 12px 24px;
+  background: #fff4e7;
+  border-bottom: 1px solid #cfb797;
+  color: #68441f;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.connection-notice > span { flex: 1 1 240px; }
+.connection-notice button { color: #68441f; padding: 0; min-height: 44px; text-decoration: underline; text-underline-offset: 3px; }
 .confirm-row {
   display: flex;
   align-items: center;

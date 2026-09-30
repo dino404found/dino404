@@ -1,5 +1,9 @@
 # DINO404
 
+**Run to reconnect.** Open-source pixel runner by [DINO404](https://github.com/dino404found).
+
+Project code is available under the [MIT License](LICENSE). Chromium assets and bundled third-party code retain their respective notices in [ASSETS.md](ASSETS.md), `public/CHROMIUM-LICENSE.txt`, `build/sites-vite-plugin.LICENSE`, and `vendor/shadcn-tailwind-4.13.0.LICENSE.md`. The package is marked private only to prevent accidental npm publication; the GitHub repository is public.
+
 Classic pixel runner, green candlestick obstacles, a daily UTC leaderboard, server replay validation, and private top-3 CSV exports. The product specification is in [`docs/MASTERPLAN.md`](docs/MASTERPLAN.md), copied from the workspace masterplan. Implementation decisions and verification are recorded in [`IMPLEMENTATION.md`](IMPLEMENTATION.md).
 
 ## Gameplay 3.0 — Signal Gate
@@ -135,7 +139,9 @@ The dinosaur's frames are isolated before scaling to prevent neighboring sprite 
 
 See [`docs/SIGNAL-GATE.md`](docs/SIGNAL-GATE.md) for the current identity update, verification and a short try-it guide.
 
-See [`docs/DEBUG-AUDIT-V3.md`](docs/DEBUG-AUDIT-V3.md) for the latest audit: drone hints keep priority over bonus feedback, scene labels retain normal-text contrast, and submission/finalization use the same exclusive UTC cutoff.
+See [`docs/DEBUG-AUDIT-MOTION.md`](docs/DEBUG-AUDIT-MOTION.md) for the latest local audit: correct validation focus, bounded UTC retries, visible connection recovery, and accurate status when a submission reply is lost. 45 core, 13 API, and 7 admin checks passed. These fixes have not been deployed.
+
+See [`docs/DEBUG-AUDIT-V3.md`](docs/DEBUG-AUDIT-V3.md) for the preceding gameplay audit: drone hints keep priority over bonus feedback, scene labels retain normal-text contrast, and submission/finalization use the same exclusive UTC cutoff.
 
 See [`docs/MOTION-IDENTITY.md`](docs/MOTION-IDENTITY.md) for the Run to reconnect UI update: relay indicators, mobile mascot, entry/result transitions, animated scores and server-confirmed verification states.
 

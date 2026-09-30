@@ -2,6 +2,12 @@ import { GAME, replay, supportedVersion } from "./game";
 export const SUBMIT_GRACE_MS = 60_000;
 export const DAY_MS = 86_400_000;
 export type Identity = { name: string; wallet: string };
+export class IdentityError extends Error {
+  constructor(public field: keyof Identity, message: string) {
+    super(message);
+    this.name = "IdentityError";
+  }
+}
 export type RunTicket = {
   id: string;
   seed: number;
@@ -32,17 +38,17 @@ export function validDay(day: string) {
 }
 export function identity(value: unknown): Identity {
   if (!value || typeof value !== "object")
-    throw new Error("Enter your name and wallet address.");
+    throw new IdentityError("name", "Enter your name and wallet address.");
   const v = value as Record<string, unknown>;
   const name =
     typeof v.name === "string" ? v.name.normalize("NFKC").trim() : "";
   const wallet = typeof v.wallet === "string" ? v.wallet.trim() : "";
   if (!/^[\p{L}\p{N} _-]{2,20}$/u.test(name))
-    throw new Error(
+    throw new IdentityError("name",
       "Use 2–20 letters, numbers, spaces, hyphens or underscores for your name.",
     );
   if (!/^0x[0-9a-fA-F]{40}$/.test(wallet) || /^0x0{40}$/i.test(wallet))
-    throw new Error(
+    throw new IdentityError("wallet",
       "Enter a valid receiving address: 0x followed by 40 hexadecimal characters.",
     );
   return { name, wallet: wallet.toLowerCase() };

@@ -45,6 +45,7 @@ import { supportedVersion } from "@/lib/game";
 import { personalStanding, isCurrentResponse, type PersonalRecord } from "@/lib/standings";
 import {
   identity,
+  IdentityError,
   shortWallet,
   type RunTicket,
   type RunPayload,
@@ -137,6 +138,7 @@ export default function DinoApp() {
   const [loadError, setLoadError] = useState(""),
     [boardError, setBoardError] = useState(""),
     [error, setError] = useState("");
+  const [errorField, setErrorField] = useState<"name" | "wallet" | "confirm" | null>(null);
   const [phase, setPhase] = useState<
     "ready" | "starting" | "playing" | "settling" | "result"
   >("ready");
@@ -237,7 +239,7 @@ export default function DinoApp() {
       setPending(previous);
       setScore(previous.score);
       setPhase("result");
-      setError("Your previous run is waiting to be submitted.");
+      setError("Your previous run is waiting for server confirmation. Retry to check its status.");
     } else removeLocal("dino404.pending");
     void loadCompetition();
     void loadBoard();
@@ -248,6 +250,7 @@ export default function DinoApp() {
   }, [wallet, loadBest]);
   useEffect(() => {
     let resetting = false;
+    let nextResetAttempt = 0;
     const t = setInterval(() => {
       const c = competitionRef.current;
       if (!c) return;
@@ -263,11 +266,13 @@ export default function DinoApp() {
           .map((n) => String(n).padStart(2, "0"))
           .join(":"),
       );
-      if (seconds === 0 && !resetting) {
+      if (seconds === 0 && !resetting && !document.hidden && performance.now() >= nextResetAttempt) {
         resetting = true;
-        void loadCompetition().then(() => {
-          void loadBoard();
-          void loadBest(walletRef.current);
+        void loadCompetition().then(async (data) => {
+          // A failed day sync must not start another batch of requests every second.
+          if (data) await Promise.all([loadBoard(), loadBest(walletRef.current)]);
+        }).finally(() => {
+          nextResetAttempt = performance.now() + 10000;
           resetting = false;
         });
       }
@@ -280,9 +285,9 @@ export default function DinoApp() {
         phaseRef.current !== "playing" &&
         document.visibilityState === "visible"
       ) {
-        void loadBoard();
-        void loadCompetition();
-        void loadBest(walletRef.current);
+        void loadCompetition().then((data) => {
+          if (data) { void loadBoard(); void loadBest(walletRef.current); }
+        });
       }
     }, 30000);
     return () => clearInterval(t);
@@ -343,18 +348,21 @@ export default function DinoApp() {
   async function start() {
     if (startLock.current || submitLock.current || pending) return;
     setError("");
+    setErrorField(null);
     let player;
     try {
       player = identity({ name, wallet });
-      if (!confirmed)
-        throw new Error(
-          "Check and confirm your receiving address before you start.",
-        );
     } catch (e) {
       setError((e as Error).message);
-      document
-        .getElementById(!name || name.length < 2 ? "dino-name" : "wallet")
-        ?.focus();
+      const field = e instanceof IdentityError ? e.field : "name";
+      setErrorField(field);
+      document.getElementById(field === "name" ? "dino-name" : "wallet")?.focus();
+      return;
+    }
+    if (!confirmed) {
+      setError("Check and confirm your receiving address before you start.");
+      setErrorField("confirm");
+      document.getElementById("confirm")?.focus();
       return;
     }
     startLock.current = true;
@@ -504,6 +512,14 @@ export default function DinoApp() {
               </span>
             </span>
           </div>
+          {loadError && !playing && (
+            <div className="connection-notice" role="alert">
+              <span>{loadError} {competition ? "Showing the last synced UTC day." : "Waiting for daily competition data."}</span>
+              <Button type="button" variant="link" disabled={refreshing || starting} onClick={() => void refresh()}>
+                {refreshing ? "Reconnecting…" : "Retry connection"}
+              </Button>
+            </div>
+          )}
           <div className={`arena-stage ${playing ? "active" : "ready"}${starting ? " is-starting" : ""}${phase === "settling" ? " is-settling" : ""}`}>
             <div className="arena-grid" />
             {playing && ticket ? (
@@ -578,7 +594,7 @@ export default function DinoApp() {
                           : "Your daily best is still " + result.best + "."}</small></span>
                       </>
                     ) : (
-                      <><RelayMark /><span><strong>{pending ? "AWAITING SUBMISSION" : "RUN NOT VERIFIED"}</strong><small>This score has not been added to the leaderboard.</small></span></>
+                      <><RelayMark /><span><strong>{pending ? "AWAITING CONFIRMATION" : "RUN NOT VERIFIED"}</strong><small>{pending ? "Retry to confirm whether the server recorded this run." : "This run could not be verified."}</small></span></>
                     )}
                   </div>
                   {finishReason === "interrupted" && (
@@ -626,7 +642,7 @@ export default function DinoApp() {
                           setPhase("ready");
                         }}
                       >
-                        Discard this unsubmitted run
+                        Dismiss saved submission
                       </Button>
                     </>
                   ) : (
@@ -693,9 +709,13 @@ export default function DinoApp() {
                       placeholder="e.g. GreenRex"
                       maxLength={20}
                       value={name}
-                      onChange={(e) => setName(e.target.value)}
+                      onChange={(e) => {
+                        setName(e.target.value);
+                        if (errorField === "name") { setErrorField(null); setError(""); }
+                      }}
                       disabled={phase === "starting"}
-                      aria-describedby={error ? "entry-error" : undefined}
+                      aria-invalid={errorField === "name" || undefined}
+                      aria-describedby={errorField === "name" ? "entry-error" : undefined}
                     />
                   </div>
                   <div className="field">
@@ -715,18 +735,25 @@ export default function DinoApp() {
                         bestRequest.current++;
                         setPersonalRecord(null);
                         setConfirmed(false);
+                        if (errorField === "wallet" || errorField === "confirm") { setErrorField(null); setError(""); }
                       }}
                       disabled={phase === "starting"}
                       spellCheck={false}
-                      aria-describedby="wallet-note"
+                      aria-invalid={errorField === "wallet" || undefined}
+                      aria-describedby={errorField === "wallet" ? "wallet-note entry-error" : "wallet-note"}
                     />
                   </div>
                   <div className="confirm-row">
                     <Checkbox
                       id="confirm"
                       checked={confirmed}
-                      onCheckedChange={(v) => setConfirmed(v === true)}
+                      onCheckedChange={(v) => {
+                        setConfirmed(v === true);
+                        if (errorField === "confirm") { setErrorField(null); setError(""); }
+                      }}
                       disabled={phase === "starting"}
+                      aria-invalid={errorField === "confirm" || undefined}
+                      aria-describedby={errorField === "confirm" ? "entry-error" : undefined}
                     />
                     <label htmlFor="confirm">
                       I’ve checked my receiving address.
@@ -736,18 +763,6 @@ export default function DinoApp() {
                     <p id="entry-error" role="alert" className="error-message">
                       {error}
                     </p>
-                  )}
-                  {loadError && (
-                    <div className="error-message" role="alert">
-                      {loadError}
-                      <Button
-                        type="button"
-                        variant="link"
-                        onClick={() => void refresh()}
-                      >
-                        Retry connection
-                      </Button>
-                    </div>
                   )}
                   <Button
                     type="submit"
