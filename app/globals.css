@@ -840,18 +840,12 @@ footer > a:last-child {
   display: grid;
   place-items: center;
 }
-.dino-sprite,
 .logo-sprite {
   display: block;
   width: 44px;
   height: 47px;
-  background: url("/assets/chromium-sprite.png") -848px -2px no-repeat;
+  background: url("/assets/dino-mark.svg") center / contain no-repeat;
   image-rendering: pixelated;
-  filter: sepia(1) saturate(4) hue-rotate(30deg) brightness(0.9);
-}
-.dino-sprite {
-  transform: scale(3.2);
-  transform-origin: center;
 }
 .logo-sprite {
   transform: scale(0.58);
@@ -861,9 +855,6 @@ footer > a:last-child {
 .dino-display.small {
   width: 100px;
   height: 90px;
-}
-.small .dino-sprite {
-  transform: scale(1.7);
 }
 .reset-label strong {
   font:
@@ -950,6 +941,7 @@ footer > a:last-child {
   background: #e4ecd8 !important;
   touch-action: none;
   user-select: none;
+  transition: background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
 }
 .duck-button small { display: block; font: 600 8px ui-monospace, monospace; letter-spacing: 1px; }
 .duck-button.is-held { background: #b8d77c !important; border-color: #527436 !important; box-shadow: inset 0 2px 4px #29471c20; }
@@ -972,6 +964,12 @@ footer > a:last-child {
   border-radius: 8px !important;
   touch-action: none;
   border: 1px solid #91ac71 !important;
+  transition: background-color 140ms ease, box-shadow 140ms ease;
+}
+.jump-button:not(:disabled):active { background: #2c503c !important; box-shadow: inset 0 2px 4px #102c2250; }
+@media (hover: hover) {
+  .jump-button:not(:disabled):hover { background: #254b37 !important; }
+  .duck-button:not(:disabled):hover { border-color: #527436 !important; }
 }
 .countdown-overlay {
   position: absolute;
@@ -1461,13 +1459,13 @@ footer > a:last-child {
   }
 }
 .mascot-canvas {
-  width: 141px;
-  height: 150px;
+  width: 132px;
+  height: 141px;
   image-rendering: pixelated;
 }
 .small .mascot-canvas {
-  width: 75px;
-  height: 80px;
+  width: 88px;
+  height: 94px;
 }
 .field label {
   font-size: 14px;

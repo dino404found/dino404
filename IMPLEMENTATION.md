@@ -58,6 +58,8 @@ Tanggal: 29 September 2026. Acuan: `docs/MASTERPLAN.md`, salinan masterplan work
 - Audit lanjutan memeriksa pergantian wallet/hari, Space pada tombol rules ketika game aktif, dan navigasi tanggal hasil owner. Reproduksi bug dan batas bukti dicatat di `docs/DEBUG-AUDIT.md`.
 - Polishing map berikutnya menambah awan dua lapisan, tiga lapisan gunung, pepohonan dengan gerak angin, serta siklus siang/malam mulai skor 1.000. Core kini **37 tes lulus**, termasuk batas transisi dan kontras scene. Build, TypeScript, lint, scene siang/senja/malam/fajar, viewport HP, dan hasil run sebenarnya diperiksa; rincian serta batas pengujian ada di `docs/MAP-POLISH.md`. Suite API/admin di atas merupakan baseline audit sebelumnya dan tidak diulang untuk perubahan visual ini.
 
+Polishing sprite/identitas pada 30 September 2026 mengisolasi tujuh frame sebelum scaling/shadow untuk menghilangkan garis di depan mulut, menyamakan ikon tab/header dengan dino game, menambahkan kedipan idle ringan dan feedback tombol. **37 tes core**, TypeScript, ESLint, dan build kembali lulus. Perbandingan renderer sebelum/sesudah, layout desktop/HP dan run lokal terverifikasi diperiksa; rincian di `docs/SPRITE-POLISH.md`. Suite API/admin tidak diulang karena tidak ada perubahan protokol, database atau physics.
+
 ## Batas yang tetap perlu diketahui
 
 - Server replay membuktikan konsistensi physics/waktu, bukan bahwa pemain manusia. Bot yang menghasilkan input valid masih mungkin; review top 3 tetap diperlukan sebelum hadiah.

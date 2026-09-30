@@ -127,4 +127,6 @@ This implementation has automated tests and browser checks; that is not a guaran
 
 The landscape fades into forest night from 1,000 to 1,100 points and back to daylight from 2,000 to 2,100, repeating every 1,000 points. Clouds, mountain layers and trees move at different speeds; reduced motion freezes decorative movement. These are visual effects and do not change scores or collisions.
 
-See [`docs/MAP-POLISH.md`](docs/MAP-POLISH.md) for landscape changes and verification, and [`docs/DEBUG-AUDIT.md`](docs/DEBUG-AUDIT.md) for the preceding bug audit. See [`ASSETS.md`](ASSETS.md) for primary sources and shipped license notices.
+The dinosaur's frames are isolated before scaling to prevent neighboring sprite pixels from bleeding into the image. The header and browser icons use the same idle silhouette. The waiting mascot blinks briefly; this pauses in hidden tabs and when reduced motion is enabled.
+
+See [`docs/SPRITE-POLISH.md`](docs/SPRITE-POLISH.md) for sprite/icon cleanup, [`docs/MAP-POLISH.md`](docs/MAP-POLISH.md) for landscape changes, and [`docs/DEBUG-AUDIT.md`](docs/DEBUG-AUDIT.md) for the preceding bug audit. See [`ASSETS.md`](ASSETS.md) for primary sources and shipped license notices.

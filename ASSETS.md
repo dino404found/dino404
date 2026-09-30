@@ -10,6 +10,7 @@ The exact classic dinosaur frames are loaded from the Chromium sprite sheet. DIN
 - Shipped notice: `public/CHROMIUM-LICENSE.txt`, linked in the page footer.
 - Retrieved: 2026-09-28. The downloaded files are included locally; the game does not hotlink them.
 - Version 2.0 also uses the original duck frames and cloud from the same atlas. Frame geometry was checked against Chromium's `components/neterror/resources/dino_game/trex.ts`; the 59 × 47 source frame contains a 25-pixel-tall duck body. No new external asset download is required.
+- Each dinosaur frame is copied into its own cached canvas before scaling or drawing a shadow. This prevents neighboring atlas pixels from appearing as a stray line in front of the mouth. The underlying pixel geometry is unchanged.
 
 The Chromium license permits redistribution and modification subject to its notice and other conditions. It does not grant endorsement by Google. DINO404 does not claim Google or Robinhood affiliation.
 
@@ -25,7 +26,7 @@ Wallet input validates a nonzero 20-byte EVM address and normalizes its case. It
 
 ## Other assets
 
-- Favicon: project-specific vector mark.
+- Header mark, SVG/PNG favicon, multi-size ICO and Apple touch icon: traced from the same licensed idle dinosaur pixels, with the DINO404 green palette. Rebuild with `node scripts/build-brand-assets.mjs` using the existing local `sharp` build dependency. Generated assets are checked in; browsers do not load this script or dependency.
 - Icons: lucide-react, provided by the installed starter dependency.
 - Typography: system fonts; no remote font requests.
 - No generated photos, videos, or third-party analytics.

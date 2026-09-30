@@ -1,5 +1,6 @@
 import { GAME, zoneAt, type GameState } from "./game";
 import { sceneColors } from "./scenery";
+import { dinoFrame, type DinoPose } from "./dino-sprites";
 
 const cloudAtlases = new WeakMap<HTMLCanvasElement, HTMLCanvasElement[]>();
 
@@ -156,12 +157,12 @@ export function renderGame(canvas: HTMLCanvasElement, s: GameState, sprite: HTML
     }
   }
   const duck = s.ducking;
-  const frame = s.dead && !duck ? 220 : duck ? (Math.floor(s.tick / 6) % 2 ? 323 : 264) : s.y < 0 ? 0 : Math.floor(s.tick / 6) % 2 ? 132 : 88;
+  const pose: DinoPose = s.dead && !duck ? "crashed" : duck ? (Math.floor(s.tick / 6) % 2 ? "duckRight" : "duckLeft") : s.y < 0 ? "idle" : Math.floor(s.tick / 6) % 2 ? "runRight" : "runLeft";
   const y = Math.round(GAME.ground - GAME.dinoH + s.y), width = duck ? GAME.duckW : GAME.dinoW;
   c.fillStyle = "#49672d20"; c.fillRect(GAME.dinoX + 7, GAME.ground + 3, duck ? 45 : 31, 3);
   c.save(); c.shadowColor = "#375827"; c.shadowOffsetX = 1; c.shadowOffsetY = 1;
   // Chromium's duck frames are 59 x 47; the visible body is 25 pixels tall.
-  c.drawImage(sprite, 848 + frame, 2, width, 47, GAME.dinoX, y, width, 47); c.restore();
+  c.drawImage(dinoFrame(sprite, pose), GAME.dinoX, y, width, 47); c.restore();
   if (!reducedMotion && s.y === 0 && !s.dead) {
     c.fillStyle = p.detail;
     for (let i = 0; i < 3; i++) c.fillRect(GAME.dinoX - 8 - i * 7 - (s.tick % 8), GAME.ground - 2 - (i % 2) * 3, 3, 2);
