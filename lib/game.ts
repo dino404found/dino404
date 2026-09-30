@@ -130,10 +130,10 @@ export function replay(seed: number, ticks: number, inputs: number[], ducks: num
   return s;
 }
 export function hazardHint(s: GameState) {
-  if (s.version === GAME.version && s.tick - s.lastSignalTick < SIGNAL.duration) return `SIGNAL FOUND · +${SIGNAL.bonus} points`;
   const o = s.obstacles.find((o) => o.x + o.w > GAME.dinoX && o.x < GAME.width);
   if (o?.kind === "candle" && s.gates.some(g => g.id === o.id && g.x < GAME.width)) return "SIGNAL GATE · Jump through for +20";
-  if (!o || o.id > 8) return "Find your rhythm. Beat your best.";
+  // Bonus feedback has its own HUD; keep controls tied to the next obstacle.
+  if (!o) return "Find your rhythm. Beat your best.";
   if (o.kind === "mid") return "MID DRONE · Hold ↓ to duck";
   if (o.kind === "low") return "LOW DRONE · Jump over";
   if (o.kind === "high") return "HIGH DRONE · Stay low";

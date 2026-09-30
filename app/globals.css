@@ -913,9 +913,9 @@ footer > a:last-child {
   --scene-ground: #e4ecd7;
   --scene-ridge: #c6d6b3;
   --scene-ink: #294333;
+  --scene-sky-ink: #203729;
   position: relative;
   background: var(--scene-sky);
-  transition: background-color 160ms linear;
 }
 .world-status {
   display: flex;
@@ -925,7 +925,6 @@ footer > a:last-child {
   border-block: 1px solid var(--scene-ridge);
   background: var(--scene-ground);
   color: var(--scene-ink);
-  transition: background-color 160ms linear, border-color 160ms linear;
   font: 600 10px ui-monospace, monospace;
   letter-spacing: 1.1px;
 }
@@ -933,7 +932,7 @@ footer > a:last-child {
 .signal-status {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   max-width: 900px; margin: auto; padding: 11px 20px;
-  color: var(--scene-ink, #284734); background: var(--scene-sky, #eef2e2);
+  color: var(--scene-sky-ink, #203729); background: var(--scene-sky, #eef2e2);
   font: 11px ui-monospace, monospace; letter-spacing: .06em;
 }
 .signal-progress { display: inline-flex; align-items: center; gap: 10px; }
@@ -969,7 +968,6 @@ footer > a:last-child {
   font-size: 12px;
   color: var(--scene-ink);
   background: var(--scene-ground);
-  transition: background-color 160ms linear;
 }
 .jump-button {
   height: 48px !important;

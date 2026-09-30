@@ -62,6 +62,8 @@ Polishing sprite/identitas pada 30 September 2026 mengisolasi tujuh frame sebelu
 
 Update Signal Gate 3.0 pada 30 September 2026 menambah bonus +20 hasil replay server, empat relay yang menyala, badge dino dan feedback sinyal. **41 tes core** dan **13 pemeriksaan API** lulus, termasuk bonus palsu yang diabaikan server, gate hanya membayar sekali, pola rintangan identik dengan v2 pada 20 seed, urutan waktu skor, dan tiket lama. TypeScript, ESLint dan build produksi lulus. Satu gate diambil lewat tombol Jump pada browser lokal; run selesai dengan total 149 dan diterima leaderboard. Detail dan batas verifikasi ada di `docs/SIGNAL-GATE.md`.
 
+Audit Signal Gate pada 30 September 2026 memperbaiki petunjuk drone yang tertutup bonus, kontras label senja dan ketidaksesuaian batas submit/finalisasi pada timestamp yang sama. **44 tes core, 13 pemeriksaan API development, dan 7 pemeriksaan admin/CSV lulus**, berikut TypeScript, ESLint dan build produksi. Tiga regresi baru terbukti gagal pada kode lama sebelum diperbaiki. Browser memverifikasi hasil run 77 pada aplikasi lokal, scene senja/malam dan layout 390 px. Rincian, reproduksi dan batas bukti ada di `docs/DEBUG-AUDIT-V3.md`.
+
 ## Batas yang tetap perlu diketahui
 
 - Server replay membuktikan konsistensi physics/waktu, bukan bahwa pemain manusia. Bot yang menghasilkan input valid masih mungkin; review top 3 tetap diperlukan sebelum hadiah.

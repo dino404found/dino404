@@ -37,10 +37,14 @@ export function sceneColors(distance: number, score = distance / 12) {
     const daylight = mix(day[zone][key], day[(zone + 1) % 3][key], blend);
     colors[key] = darkness <= 0.5 ? mix(daylight, dusk[key], darkness * 2) : mix(dusk[key], night[key], (darkness - 0.5) * 2);
   }
-  // Keep labels and drone silhouettes readable even midway through a fade.
+  // Keep small labels and drone silhouettes readable even midway through a fade.
   const inkFor = (background: string) => {
     const light = luminance(background);
-    return (light + 0.05) / (luminance("#203729") + 0.05) >= (luminance("#eff6dc") + 0.05) / (light + 0.05) ? "#203729" : "#eff6dc";
+    const darkContrast = (light + 0.05) / (luminance("#203729") + 0.05);
+    const lightContrast = (luminance("#eff6dc") + 0.05) / (light + 0.05);
+    if (Math.max(darkContrast, lightContrast) >= 4.5) return darkContrast >= lightContrast ? "#203729" : "#eff6dc";
+    // Midtones can fail with both branded inks. Black/white guarantees >= 4.5:1.
+    return (light + 0.05) / 0.05 >= 1.05 / (light + 0.05) ? "#000000" : "#ffffff";
   };
   return { ...colors, ink: inkFor(colors.sky), uiInk: inkFor(colors.ground), darkness };
 }

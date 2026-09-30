@@ -63,12 +63,14 @@ export default function GameCanvas({ ticket, onFinish, onScore, onCancel }: {
           if (changed) ducks.push(s.tick);
           step(s, wantsJump, duck);
         }
+        // Update foreground and background together with the canvas, without a second CSS fade.
+        const colors = sceneColors(s.distance, s.score);
+        for (const key of ["sky", "ground", "ridge"] as const) surface.current?.style.setProperty(`--scene-${key}`, colors[key]);
+        surface.current?.style.setProperty("--scene-ink", colors.uiInk);
+        surface.current?.style.setProperty("--scene-sky-ink", colors.ink);
         if (Math.floor(s.tick / 6) !== lastHud) {
           lastHud = Math.floor(s.tick / 6); scoreRef.current(s.score);
           setHint(hazardHint(s)); setZone(ZONES[zoneAt(s.distance)]);
-          const colors = sceneColors(s.distance, s.score);
-          for (const key of ["sky", "ground", "ridge"] as const) surface.current?.style.setProperty(`--scene-${key}`, colors[key]);
-          surface.current?.style.setProperty("--scene-ink", colors.uiInk);
           setLight(colors.darkness < 0.02 ? "DAY RUN" : colors.darkness > 0.98 ? "NIGHT RUN" : Math.floor(s.score / 1000) % 2 ? "DUSK" : "DAWN");
           setSignals(s.signals); setSignalFound(s.tick - s.lastSignalTick < SIGNAL.duration);
           setHeld(s.duckHeld);

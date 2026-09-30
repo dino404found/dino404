@@ -7,7 +7,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
-import { GAME, SIGNAL, createGame, replay, step, type Obstacle } from "../lib/game";
+import { GAME, SIGNAL, createGame, replay, step, hazardHint, type Obstacle } from "../lib/game";
 import { replay as replayV1 } from "../lib/game-v1";
 import { createGame as createV2, step as stepV2, replay as replayV2 } from "../lib/game-v2";
 import {
@@ -18,6 +18,7 @@ import {
   validateRun,
   validDay,
   inputSummary,
+  SUBMIT_GRACE_MS,
   type RunTicket,
 } from "../lib/protocol";
 
@@ -47,6 +48,45 @@ test("night milestones follow displayed total score including signal bonuses", (
   assert.equal(sceneColors(1000 * 12, 1100).darkness, 1);
   assert.equal(sceneColors(1900 * 12, 2000).darkness, 1);
   assert.equal(sceneColors(2000 * 12, 2100).darkness, 0);
+});
+
+test("small HUD labels retain normal-text contrast across sky, ground, zones and bonus offsets", () => {
+  const luminance = (hex: string) => {
+    const c = [1, 3, 5].map(k => parseInt(hex.slice(k, k + 2), 16) / 255)
+      .map(n => n <= .04045 ? n / 12.92 : ((n + .055) / 1.055) ** 2.4);
+    return c[0] * .2126 + c[1] * .7152 + c[2] * .0722;
+  };
+  for (let distance = 0; distance < 21000; distance += 175) {
+    for (let score = 1000; score <= 1100; score += .5) {
+      const palette = sceneColors(distance, score);
+      for (const [bg, fg] of [[palette.sky, palette.ink], [palette.ground, palette.uiInk]]) {
+        const a = luminance(bg), b = luminance(fg);
+        const ratio = (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
+        assert.ok(ratio >= 4.5, `HUD contrast ${ratio} at distance ${distance}, score ${score}`);
+      }
+    }
+  }
+});
+
+test("bonus feedback cannot hide the next drone's controls, including late-run drones", () => {
+  const s = createGame(1);
+  while (s.tick < 1991 && !s.dead) {
+    const o = s.obstacles.find(o => o.x + o.w > GAME.dinoX);
+    const duck = !!o && o.kind === "mid" && o.x - GAME.dinoX < s.speed * 24;
+    const jump = !!o && (o.kind === "low" || o.kind === "candle") && s.y === 0 && o.x - GAME.dinoX < s.speed * 14;
+    step(s, jump, duck);
+  }
+  assert.equal(s.dead, false);
+  assert.ok(s.tick - s.lastSignalTick < SIGNAL.duration);
+  const next = s.obstacles.find(o => o.x + o.w > GAME.dinoX)!;
+  assert.equal(next.kind, "mid");
+  assert.ok(next.id > 8);
+  assert.ok(next.x - GAME.dinoX < s.speed * 24);
+  assert.equal(hazardHint(s), "MID DRONE · Hold ↓ to duck");
+  next.kind = "low";
+  assert.equal(hazardHint(s), "LOW DRONE · Jump over");
+  next.kind = "high";
+  assert.equal(hazardHint(s), "HIGH DRONE · Stay low");
 });
 
 test("fresh hosted database initializes all tables and preserves data on repeated bootstrap", () => {
@@ -234,6 +274,21 @@ test("CSV quoting, formula neutralization, UTF-8, and empty header", () => {
   assert.ok(c.includes("'=HYPERLINK"));
   assert.ok(c.includes('Dino, ""Sage""\n二'));
   assert.equal(csv([], ["a", "b"]), '\uFEFF"a","b"\r\n');
+});
+
+test("submission and SQL finalization never overlap at the UTC grace cutoff", () => {
+  const t = { ...ticket, startAt: ticket.closesAt - 1000 };
+  const payload = { ticks: 60, inputs: [], reason: "day-end" as const };
+  const cutoff = t.closesAt + SUBMIT_GRACE_MS;
+  const db = database();
+  db.prepare("INSERT INTO competition_days(day,seed,version,closes_at) VALUES (?,1,?,?)").run(t.day, t.version, t.closesAt);
+  assert.doesNotThrow(() => validateRun(t, payload, cutoff - 1));
+  db.prepare(FINALIZE_DAY).run(cutoff - 1, t.day, SUBMIT_GRACE_MS, cutoff - 1);
+  assert.equal(db.prepare("SELECT finalized_at FROM competition_days").get()!.finalized_at, null);
+  for (const now of [cutoff, cutoff + 1]) assert.throws(() => validateRun(t, payload, now), /window/);
+  db.prepare(FINALIZE_DAY).run(cutoff, t.day, SUBMIT_GRACE_MS, cutoff);
+  assert.equal(db.prepare("SELECT finalized_at FROM competition_days").get()!.finalized_at, cutoff);
+  db.close();
 });
 
 function database() {

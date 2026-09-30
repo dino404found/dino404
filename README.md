@@ -135,4 +135,6 @@ The dinosaur's frames are isolated before scaling to prevent neighboring sprite 
 
 See [`docs/SIGNAL-GATE.md`](docs/SIGNAL-GATE.md) for the current identity update, verification and a short try-it guide.
 
+See [`docs/DEBUG-AUDIT-V3.md`](docs/DEBUG-AUDIT-V3.md) for the latest audit: drone hints keep priority over bonus feedback, scene labels retain normal-text contrast, and submission/finalization use the same exclusive UTC cutoff.
+
 See [`docs/SPRITE-POLISH.md`](docs/SPRITE-POLISH.md) for sprite/icon cleanup, [`docs/MAP-POLISH.md`](docs/MAP-POLISH.md) for landscape changes, and [`docs/DEBUG-AUDIT.md`](docs/DEBUG-AUDIT.md) for the preceding bug audit. See [`ASSETS.md`](ASSETS.md) for primary sources and shipped license notices.

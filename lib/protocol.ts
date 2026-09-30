@@ -69,7 +69,8 @@ export function validateRun(
     throw new Error("The run clock does not match the server.");
   if (
     end > ticket.closesAt + 0.001 ||
-    now > ticket.closesAt + SUBMIT_GRACE_MS ||
+    // Finalization becomes eligible at this exact instant; acceptance ends before it.
+    now >= ticket.closesAt + SUBMIT_GRACE_MS ||
     now > end + SUBMIT_GRACE_MS
   )
     throw new Error("The submission window has ended.");
