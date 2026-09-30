@@ -888,3 +888,14 @@ Pemilik menyetujui ketiga ide identitas: Signal Gate opsional, dunia yang meresp
 - Transisi malam tetap mulai skor total 1.000, termasuk bonus. Zona lanskap tetap mengikuti jarak.
 - Versi simulasi menjadi 3.0.0. Validator 1.0.0 dan 2.0.0 dipertahankan untuk tiket lama. Pre-season dapat berpindah versi tanpa menghapus skor/seed; hari berhadiah tetap memakai versi hari sampai UTC berikutnya.
 - Handoff wajib menunjukkan lokasi badge, cara mengambil gate pertama, indikator empat relay dan respons map; sertakan hasil pengecekan replay, bonus, kompatibilitas tiket dan tampilan HP.
+
+## 24. Amendemen motion dan identitas UI — 30 September 2026
+
+Pemilik menyetujui penerapan tema Run to reconnect pada seluruh alur masuk, bermain dan hasil, berikut laporan lokasi perubahan untuk dicoba sendiri.
+
+- Pakai empat kotak relay yang sama sebagai ciri loading, persiapan dan status hasil. Halaman masuk memperoleh gerak sinyal yang ringan; dino dan relay juga terlihat pada HP.
+- Form ke arena serta arena ke hasil berpindah dengan fade dan pergeseran pendek. Persiapan animasi tidak memotong waktu tiket/countdown; submit dimulai segera tanpa menunggu animasi selesai.
+- Panel hasil memakai animasi angka singkat dan tanda rekor baru. RUN VERIFIED hanya muncul setelah penerimaan server; error dan pending tetap dinyatakan belum terverifikasi.
+- Bermain ulang tidak boleh menampilkan kilatan form awal. Kontrol terkunci selama persiapan dan kembali berfungsi jika request gagal.
+- Reduced motion dan visibility dihormati. Tidak ada suara otomatis, library animasi baru, perubahan physics/bonus, atau perubahan aturan kompetisi.
+- Handoff mencakup halaman masuk desktop/HP, Start, hasil, replay, loading, status gagal/retry dan batas bukti pengujian.

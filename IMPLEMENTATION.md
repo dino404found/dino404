@@ -64,6 +64,8 @@ Update Signal Gate 3.0 pada 30 September 2026 menambah bonus +20 hasil replay se
 
 Audit Signal Gate pada 30 September 2026 memperbaiki petunjuk drone yang tertutup bonus, kontras label senja dan ketidaksesuaian batas submit/finalisasi pada timestamp yang sama. **44 tes core, 13 pemeriksaan API development, dan 7 pemeriksaan admin/CSV lulus**, berikut TypeScript, ESLint dan build produksi. Tiga regresi baru terbukti gagal pada kode lama sebelum diperbaiki. Browser memverifikasi hasil run 77 pada aplikasi lokal, scene senja/malam dan layout 390 px. Rincian, reproduksi dan batas bukti ada di `docs/DEBUG-AUDIT-V3.md`.
 
+Update motion/identitas UI pada 30 September 2026 menghubungkan form, persiapan bermain, hasil run dan loading melalui empat relay. Jeda masuk dilakukan sebelum tiket dibuat; submit tidak menunggu reveal hasil. Status verified tetap berdasarkan respons server. **44 tes core, 13 API pada build produksi, TypeScript, ESLint dan build lulus.** Browser memeriksa desktop/HP, run 77, rekor baru, replay, kegagalan submit 503 di proxy QA dan retry berhasil, serta preferensi reduced motion yang disimulasikan lokal. Rincian ada di `docs/MOTION-IDENTITY.md`.
+
 ## Batas yang tetap perlu diketahui
 
 - Server replay membuktikan konsistensi physics/waktu, bukan bahwa pemain manusia. Bot yang menghasilkan input valid masih mungkin; review top 3 tetap diperlukan sebelum hadiah.

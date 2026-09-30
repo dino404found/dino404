@@ -137,4 +137,6 @@ See [`docs/SIGNAL-GATE.md`](docs/SIGNAL-GATE.md) for the current identity update
 
 See [`docs/DEBUG-AUDIT-V3.md`](docs/DEBUG-AUDIT-V3.md) for the latest audit: drone hints keep priority over bonus feedback, scene labels retain normal-text contrast, and submission/finalization use the same exclusive UTC cutoff.
 
+See [`docs/MOTION-IDENTITY.md`](docs/MOTION-IDENTITY.md) for the Run to reconnect UI update: relay indicators, mobile mascot, entry/result transitions, animated scores and server-confirmed verification states.
+
 See [`docs/SPRITE-POLISH.md`](docs/SPRITE-POLISH.md) for sprite/icon cleanup, [`docs/MAP-POLISH.md`](docs/MAP-POLISH.md) for landscape changes, and [`docs/DEBUG-AUDIT.md`](docs/DEBUG-AUDIT.md) for the preceding bug audit. See [`ASSETS.md`](ASSETS.md) for primary sources and shipped license notices.

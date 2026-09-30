@@ -8,7 +8,6 @@ import {
   Clock3,
   ShieldCheck,
   RotateCcw,
-  LoaderCircle,
   Pencil,
   RefreshCw,
 } from "lucide-react";
@@ -39,6 +38,9 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import GameCanvas from "./game-canvas";
 import DinoMascot from "./dino-mascot";
+import RelayMark from "./relay-mark";
+import RunScore from "./run-score";
+import { usePageMotion } from "./use-page-motion";
 import { supportedVersion } from "@/lib/game";
 import { personalStanding, isCurrentResponse, type PersonalRecord } from "@/lib/standings";
 import {
@@ -136,8 +138,12 @@ export default function DinoApp() {
     [boardError, setBoardError] = useState(""),
     [error, setError] = useState("");
   const [phase, setPhase] = useState<
-    "ready" | "starting" | "playing" | "result"
+    "ready" | "starting" | "playing" | "settling" | "result"
   >("ready");
+  const [startingFrom, setStartingFrom] = useState<"ready" | "result">("ready");
+  const motion = usePageMotion();
+  const revealTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(revealTimer.current), []);
   const [ticket, setTicket] = useState<RunTicket | null>(null),
     [score, setScore] = useState(0),
     [personalRecord, setPersonalRecord] = useState<PersonalRecord | null>(null);
@@ -352,13 +358,15 @@ export default function DinoApp() {
       return;
     }
     startLock.current = true;
+    const origin = phase === "result" ? "result" : "ready";
+    setStartingFrom(origin);
     setPhase("starting");
-    setResult(null);
     try {
       // Decode the source sprite before obtaining a time-limited run ticket.
       const image = new Image();
       image.src = "/assets/chromium-sprite.png";
-      await image.decode();
+      // Complete the brief exit before requesting a ticket; the server countdown stays intact.
+      await Promise.all([image.decode(), new Promise(resolve => setTimeout(resolve, motion ? 180 : 0))]);
       const t = await api<RunTicket>("/api/runs", {
         ...player,
         confirmed: true,
@@ -369,6 +377,7 @@ export default function DinoApp() {
       setWallet(player.wallet);
       saveLocal("dino404.identity", { ...player, confirmed: true });
       setScore(0);
+      setResult(null);
       setTicket(t);
       setPhase("playing");
       document
@@ -382,7 +391,7 @@ export default function DinoApp() {
             ? e.message
             : "Couldn't start your run. Check your connection and try again.",
       );
-      setPhase("ready");
+      setPhase(origin);
     } finally {
       startLock.current = false;
     }
@@ -426,7 +435,11 @@ export default function DinoApp() {
     if (!ticket) return;
     const p = { ticket, payload, score: finalScore, wallet: wallet.toLowerCase() };
     setScore(finalScore);
-    setPhase("result");
+    clearTimeout(revealTimer.current);
+    if (payload.reason === "collision" && motion) {
+      setPhase("settling");
+      revealTimer.current = setTimeout(() => setPhase("result"), 240);
+    } else setPhase("result");
     setFinishReason(payload.reason);
     setPending(p);
     saveLocal("dino404.pending", p);
@@ -437,10 +450,11 @@ export default function DinoApp() {
     await Promise.all([loadCompetition(), loadBoard(), loadBest(wallet)]);
     setRefreshing(false);
   }
-  const playing = phase === "playing",
+  const playing = phase === "playing" || phase === "settling",
+    starting = phase === "starting",
     rewards = competition?.rewards;
   return (
-    <div className="site-shell">
+    <div className="site-shell" data-motion={motion ? "on" : "off"}>
       <a className="skip-link" href="#main">
         Skip to game
       </a>
@@ -448,7 +462,7 @@ export default function DinoApp() {
         <a className="wordmark" href="#" aria-label="DINO404 home">
           <span className="logo-sprite" aria-hidden="true" />
           DINO<span>404</span>
-          <span className="edition">THE DAILY RUN</span>
+          <span className="edition">RUN TO RECONNECT</span>
         </a>
         <nav aria-label="Main navigation">
           <a href="#leaderboard">Leaderboard</a>
@@ -476,7 +490,7 @@ export default function DinoApp() {
         <section className="game-section" aria-label="DINO404 game">
           <div className="arena-toolbar">
             <span className="season-label">
-              <span className="live-dot" /> DAILY RUN{" "}
+              <RelayMark mode={competition ? "complete" : "searching"} /> DAILY RUN{" "}
               <span className="muted-separator">/</span>
               <span className="toolbar-note">
                 {competition ? competition.day + " UTC" : "SYNCING…"}
@@ -490,10 +504,10 @@ export default function DinoApp() {
               </span>
             </span>
           </div>
-          <div className={`arena-stage ${playing ? "active" : "ready"}`}>
+          <div className={`arena-stage ${playing ? "active" : "ready"}${starting ? " is-starting" : ""}${phase === "settling" ? " is-settling" : ""}`}>
             <div className="arena-grid" />
             {playing && ticket ? (
-              <>
+              <div className="play-view">
                 <div className="game-hud">
                   <div>
                     <span className="hud-label">{name}</span>
@@ -517,26 +531,27 @@ export default function DinoApp() {
                   onScore={setScore}
                   onCancel={(message) => { setTicket(null); setPhase("ready"); setError(message); }}
                 />
-              </>
-            ) : phase === "result" ? (
-              <div className="result-layout">
+              </div>
+            ) : phase === "result" || (starting && startingFrom === "result") ? (
+              <div className={`result-layout${result?.improved ? " has-record" : ""}`}>
                 <div className="result-art">
+                  <div className="run-receipt"><RelayMark mode={result ? "complete" : submitting ? "searching" : "idle"} /> DINO404 / RUN LOG</div>
                   <div className="dino-display small">
                     <DinoMascot />
                   </div>
                   <span className="eyebrow">
                     {result?.improved
-                      ? "A NEW DAILY BEST"
-                      : "THERE’S ALWAYS ANOTHER RUN"}
+                      ? <span className="record-stamp"><Trophy size={12} /> NEW DAILY BEST</span>
+                      : result ? "MOMENTUM FOUND" : "RUN COMPLETE"}
                   </span>
                   <h2>
                     {result?.improved
                       ? "Look at you go."
-                      : "A little further next time."}
+                      : "Every run reconnects."}
                   </h2>
                   <div className="result-score">
-                    {String(score).padStart(5, "0")}
-                    <span>POINTS</span>
+                    <RunScore score={score} />
+                    <span className="score-caption">POINTS</span>
                   </div>
                 </div>
                 <div className="result-details">
@@ -550,21 +565,20 @@ export default function DinoApp() {
                       <strong>{result?.rank ? "#" + result.rank : "—"}</strong>
                     </div>
                   </div>
-                  <div role="status" className="submission-status">
+                  <div role="status" aria-live="polite" aria-atomic="true" className={`submission-status ${result ? "is-verified" : ""}`}>
                     {submitting ? (
                       <>
-                        <LoaderCircle className="spin" size={16} /> Verifying
-                        your run…
+                        <RelayMark mode="searching" /><span><strong>VERIFYING RUN</strong><small>Checking your score with the server.</small></span>
                       </>
                     ) : result ? (
                       <>
-                        <ShieldCheck size={17} />
-                        {result.improved
+                        <RelayMark mode="complete" />
+                        <span><strong>RUN VERIFIED</strong><small>{result.improved
                           ? "Your new record is on the board."
-                          : "Your daily best is still " + result.best + "."}
+                          : "Your daily best is still " + result.best + "."}</small></span>
                       </>
                     ) : (
-                      "This score has not been added to the leaderboard."
+                      <><RelayMark /><span><strong>{pending ? "AWAITING SUBMISSION" : "RUN NOT VERIFIED"}</strong><small>This score has not been added to the leaderboard.</small></span></>
                     )}
                   </div>
                   {finishReason === "interrupted" && (
@@ -620,16 +634,16 @@ export default function DinoApp() {
                       <Button
                         type="button"
                         className="primary-btn"
-                        disabled={submitting}
+                        disabled={submitting || starting}
                         onClick={() => void start()}
                       >
-                        Run it back <RotateCcw size={17} />
+                        {starting ? <>Preparing your run <RelayMark mode="searching" /></> : <>Run it back <RotateCcw size={17} /></>}
                       </Button>
                       <Button
                         type="button"
                         variant="ghost"
                         className="secondary-btn"
-                        disabled={submitting}
+                        disabled={submitting || starting}
                         onClick={() => {
                           setPhase("ready");
                           setError("");
@@ -644,17 +658,18 @@ export default function DinoApp() {
             ) : (
               <div className="start-layout">
                 <div className="start-art">
-                  <span className="scene-label">404 / SIGNAL LOST</span>
+                  <span className="scene-label"><RelayMark mode="searching" /> 404 / SIGNAL LOST</span>
+                  <div className="signal-path" aria-hidden="true"><i /><i /><i /><i /></div>
                   <div className="dino-display">
                     <DinoMascot />
                   </div>
                   <div className="art-caption">
-                    A little signal.
+                    A little offline.
                     <br />
-                    <strong>A world coming alive.</strong>
+                    <strong>Run to reconnect.</strong>
                   </div>
                   <span className="scene-coordinates">
-                    EST. 2026 · KEEP RUNNING
+                    FOUR RELAYS. ONE WAY FORWARD.
                   </span>
                 </div>
                 <form
@@ -742,7 +757,7 @@ export default function DinoApp() {
                     {phase === "starting" ? (
                       <>
                         Preparing your run{" "}
-                        <LoaderCircle className="spin" size={18} />
+                        <RelayMark mode="searching" />
                       </>
                     ) : (
                       <>
@@ -786,7 +801,7 @@ export default function DinoApp() {
                 onClick={() => void refresh()}
                 disabled={refreshing || playing}
               >
-                <RefreshCw size={19} className={refreshing ? "spin" : ""} />
+                {refreshing ? <RelayMark mode="searching" /> : <RefreshCw size={19} />}
               </Button>
             </div>
             {boardError && (
@@ -797,6 +812,7 @@ export default function DinoApp() {
             )}
             {!board && !boardError ? (
               <div className="board-loading" aria-label="Loading leaderboard">
+                <span className="board-sync"><RelayMark mode="searching" /> SYNCING THE DAILY RUN</span>
                 <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-10 w-full" />
