@@ -41,6 +41,10 @@ import DinoMascot from "./dino-mascot";
 import RelayMark from "./relay-mark";
 import RunScore from "./run-score";
 import { usePageMotion } from "./use-page-motion";
+import SignalBackground from "./signal-background";
+import ExperienceControls from "./experience-controls";
+import { useGameAudio } from "./use-game-audio";
+import SectionLink, { useCleanAddress } from "./section-link";
 import { supportedVersion } from "@/lib/game";
 import { personalStanding, isCurrentResponse, type PersonalRecord } from "@/lib/standings";
 import {
@@ -143,7 +147,10 @@ export default function DinoApp() {
     "ready" | "starting" | "playing" | "settling" | "result"
   >("ready");
   const [startingFrom, setStartingFrom] = useState<"ready" | "result">("ready");
-  const motion = usePageMotion();
+  const pageMotion = usePageMotion();
+  const sound = useGameAudio();
+  const motion = pageMotion && sound.preferences.motion;
+  useCleanAddress();
   const revealTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => () => clearTimeout(revealTimer.current), []);
   const [ticket, setTicket] = useState<RunTicket | null>(null),
@@ -366,6 +373,7 @@ export default function DinoApp() {
       return;
     }
     startLock.current = true;
+    sound.unlock();
     const origin = phase === "result" ? "result" : "ready";
     setStartingFrom(origin);
     setPhase("starting");
@@ -462,22 +470,24 @@ export default function DinoApp() {
     starting = phase === "starting",
     rewards = competition?.rewards;
   return (
-    <div className="site-shell" data-motion={motion ? "on" : "off"}>
-      <a className="skip-link" href="#main">
+    <div className="site-page" id="top" data-motion={motion ? "on" : "off"} data-playing={playing ? "true" : "false"}>
+      <SignalBackground />
+      <div className="site-shell">
+      <SectionLink className="skip-link" targetId="main">
         Skip to game
-      </a>
+      </SectionLink>
       <header className="site-header">
-        <a className="wordmark" href="#" aria-label="DINO404 home">
+        <SectionLink className="wordmark" targetId="top" aria-label="DINO404 home">
           <span className="logo-sprite" aria-hidden="true" />
           DINO<span>404</span>
           <span className="edition">RUN TO RECONNECT</span>
-        </a>
+        </SectionLink>
         <nav aria-label="Main navigation">
-          <a href="#leaderboard">Leaderboard</a>
-          <a href="#rewards">Rewards</a>
-          <a href="#rules">
+          <SectionLink targetId="leaderboard">Leaderboard</SectionLink>
+          <SectionLink targetId="rewards">Rewards</SectionLink>
+          <SectionLink targetId="rules">
             How to play <ArrowUpRight size={15} />
-          </a>
+          </SectionLink>
         </nav>
       </header>
       <main id="main">
@@ -512,6 +522,7 @@ export default function DinoApp() {
               </span>
             </span>
           </div>
+          <ExperienceControls preferences={sound.preferences} update={sound.update} unlock={sound.unlock} unavailable={sound.unavailable} />
           {loadError && !playing && (
             <div className="connection-notice" role="alert">
               <span>{loadError} {competition ? "Showing the last synced UTC day." : "Waiting for daily competition data."}</span>
@@ -543,6 +554,7 @@ export default function DinoApp() {
                 <GameCanvas
                   key={ticket.id}
                   ticket={ticket}
+                  audio={sound.audio}
                   onFinish={finish}
                   onScore={setScore}
                   onCancel={(message) => { setTicket(null); setPhase("ready"); setError(message); }}
@@ -1029,20 +1041,21 @@ export default function DinoApp() {
         </section>
       </main>
       <footer>
-        <a className="wordmark footer-wordmark" href="#">
+        <SectionLink className="wordmark footer-wordmark" targetId="top">
           DINO<span>404</span>
-        </a>
+        </SectionLink>
         <span>Connection lost. Momentum found.</span>
         <a href="/CHROMIUM-LICENSE.txt">
           Credits & license <ArrowUpRight size={14} />
         </a>
-        <a href="#main" aria-label="Back to top">
+        <SectionLink targetId="top" aria-label="Back to top">
           <ArrowUp size={16} />
-        </a>
+        </SectionLink>
       </footer>
       <div className="legal-line">
         An independent community project. Not affiliated with Google or
         Robinhood.
+      </div>
       </div>
     </div>
   );

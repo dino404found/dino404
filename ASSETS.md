@@ -31,3 +31,5 @@ Wallet input validates a nonzero 20-byte EVM address and normalizes its case. It
 - Icons: lucide-react, provided by the installed starter dependency.
 - Typography: system fonts; no remote font requests.
 - No generated photos, videos, or third-party analytics.
+- The page signal field is original CSS/HTML artwork using the existing four-square relay identity. It uses no downloaded imagery or animation library.
+- The 16-bar pixel soundtrack and six short sound cues are original project compositions in `lib/audio-score.ts`, synthesized by `lib/game-audio.ts` with native Web Audio. No third-party recordings or samples are included; this source follows the project's MIT license.

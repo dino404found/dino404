@@ -911,3 +911,17 @@ Pemilik meminta source langsung publik/open source pada `dino404found/dino404`, 
 - Aturan game, top 3, UTC, tie awal, satu posisi per wallet, bonus Signal Gate dan distribusi manual tetap sama. Preview tetap pre-season tanpa hadiah aktif. Tidak melakukan konfigurasi token, transaksi, domain produksi atau pemindahan skor Sites pada tahap ini.
 - Database preview baru terpisah dari Sites. Konfigurasi produksi, retensi data kompetisi dan auto-deploy GitHub harus dinyatakan jelas saat serah terima; jangan menganggapnya sudah aktif hanya karena preview terbit.
 - Verifikasi mencakup build kedua runtime, tes game/API/CSV, autentikasi owner, rollback/revisi transaksi, origin publik di balik proxy, dan pemeriksaan halaman preview sebenarnya.
+
+## 26. Amendemen background website, suara dan URL — 1 Oktober 2026
+
+Pemilik meminta background keseluruhan website yang hidup, khas DINO404, tetap terang, selaras, kontras dan ringan; backsound pixel lembut serta efek suara; dan penghapusan tanda pagar pada address bar. Persetujuan ini memperbarui ketentuan tanpa suara pada bagian 23–24: suara boleh berjalan sesudah tindakan Start pemain, tanpa autoplay saat halaman pertama dibuka.
+
+- Background halaman memakai bidang warna mint/lime bergerak perlahan, grid titik di sisi halaman, frame relay besar, empat kotak identitas dan pixel sinyal yang bergerak sepanjang frame. Area teks mendapat lapisan terang untuk menjaga keterbacaan. Intensitas dekorasi berkurang saat bermain.
+- Motion memakai transform/opacity CSS, tanpa loop partikel JavaScript, video, gambar jaringan atau filter blur bergerak. Target kelancaran 60 FPS; hasil harus dilaporkan berdasarkan lingkungan pengujian, bukan dijanjikan untuk seluruh perangkat.
+- Musik berupa komposisi pixel original yang lembut, tempo 84 BPM, dengan melodi triangle, bass sine dan chord pelan. Musik dimulai saat run benar-benar berjalan setelah gesture Start, lalu berhenti saat run berakhir. Tab kehilangan fokus atau tersembunyi menghentikan seluruh audio.
+- Efek singkat: Start, lompatan yang benar-benar terjadi, awal menahan duck, Signal Gate didapat, milestone skor 1.000, dan collision. Audio tidak memengaruhi tick, physics, scoring, pola rintangan atau replay server.
+- Kontrol Motion, Music, FX dan volume berada di atas arena, terpisah dari tombol Jump/Duck. Default volume 45%; Music/FX dapat dimatikan sendiri-sendiri. Preferensi tersimpan di browser, tetap berfungsi selama sesi jika storage tidak tersedia. Reduced motion dari perangkat selalu dihormati.
+- Kegagalan membuka AudioContext tidak menghalangi main; tampilkan pemberitahuan singkat jika browser tidak menyediakan suara. Jangan membuat suara beruntun ketika browser sempat tersendat.
+- Logo/home kembali ke atas tanpa menambah `#`; navigasi bagian tetap scroll halus, mendukung keyboard dan reduced motion. URL lama dengan fragment yang dikenal tetap menuju bagian yang dimaksud lalu dibersihkan; query string dipertahankan.
+- Periksa viewport desktop/HP, overflow, kontras, pause motion, persistensi preferensi, output audio browser, mute/volume, lifecycle audio, URL, regresi game/API/CSV, lint, TypeScript dan build sebelum preview Netlify diperbarui.
+- Gameplay tetap 3.0.0, aturan kompetisi dan state pre-season tetap berlaku. Dokumentasi sumber/aset mencatat komposisi audio original; fixture pengujian tidak masuk deployment.

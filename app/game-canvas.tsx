@@ -6,9 +6,11 @@ import { GAME, SIGNAL, createGame, step, hazardHint, zoneAt, ZONES } from "@/lib
 import { makeSprites, renderGame } from "@/lib/render-game";
 import { sceneColors } from "@/lib/scenery";
 import type { RunTicket, RunPayload } from "@/lib/protocol";
+import type { DinoAudio } from "@/lib/game-audio";
 
-export default function GameCanvas({ ticket, onFinish, onScore, onCancel }: {
+export default function GameCanvas({ ticket, audio, onFinish, onScore, onCancel }: {
   ticket: RunTicket;
+  audio: DinoAudio;
   onFinish: (payload: RunPayload, score: number) => void;
   onScore: (score: number) => void;
   onCancel: (message: string) => void;
@@ -26,7 +28,7 @@ export default function GameCanvas({ ticket, onFinish, onScore, onCancel }: {
   useEffect(() => {
     const el = canvas.current!;
     const keys = duckKeys.current, pointers = duckPointers.current;
-    let raf = 0, disposed = false, finished = false, ready = false, lastHud = -1, lastCountdown = -1;
+    let raf = 0, disposed = false, finished = false, ready = false, lastHud = -1, lastCountdown = -1, audioStarted = false;
     const s = createGame(ticket.seed, ticket.version), inputs: number[] = [], ducks: number[] = [];
     const base = performance.now(), serverBase = ticket.serverNow;
     const now = () => serverBase + performance.now() - base;
@@ -37,6 +39,7 @@ export default function GameCanvas({ ticket, onFinish, onScore, onCancel }: {
     const finish = (reason: RunPayload["reason"]) => {
       if (finished || disposed) return;
       finished = true; cancelAnimationFrame(raf); clearControls(); setRunning(false); setCountdown(0);
+      audio.endRun(reason === "collision");
       if (s.tick === 0) { cancelRef.current("Run cancelled before the start. You're ready to try again."); return; }
       finishRef.current({ ticks: s.tick, inputs, ducks, reason }, s.score);
     };
@@ -51,6 +54,7 @@ export default function GameCanvas({ ticket, onFinish, onScore, onCancel }: {
       if (count !== lastCountdown) { lastCountdown = count; setCountdown(count); setRunning(count === 0); }
       if (t >= ticket.startAt) {
         if (!ready) { finish("interrupted"); return; }
+        if (!audioStarted) { audioStarted = true; audio.beginRun(); }
         const target = Math.min(maxTicks, Math.max(0, Math.floor(((t - ticket.startAt) * GAME.hz) / 1000)));
         if (target - s.tick > 90) { finish("interrupted"); return; }
         while (s.tick < target && !s.dead) {
@@ -61,7 +65,12 @@ export default function GameCanvas({ ticket, onFinish, onScore, onCancel }: {
           if (inputs.length + ducks.length + Number(changed) + Number(wantsJump) > 6000) { finish("interrupted"); return; }
           if (wantsJump) inputs.push(s.tick);
           if (changed) ducks.push(s.tick);
+          const previousSignals = s.signals, previousMilestone = Math.floor(s.score / 1000);
           step(s, wantsJump, duck);
+          if (wantsJump) audio.effect("jump");
+          if (changed && duck) audio.effect("duck");
+          if (s.signals > previousSignals) audio.effect("signal");
+          if (!s.dead && Math.floor(s.score / 1000) > previousMilestone) audio.effect("milestone");
         }
         // Update foreground and background together with the canvas, without a second CSS fade.
         const colors = sceneColors(s.distance, s.score);
@@ -102,11 +111,12 @@ export default function GameCanvas({ ticket, onFinish, onScore, onCancel }: {
     else raf = requestAnimationFrame(frame);
     return () => {
       disposed = true; cancelAnimationFrame(raf); jump.current = false; keys.clear(); pointers.clear();
+      audio.endRun();
       window.removeEventListener("keydown", keyDown); window.removeEventListener("keyup", keyUp);
       window.removeEventListener("blur", blur); window.removeEventListener("orientationchange", blur);
       document.removeEventListener("visibilitychange", visibility);
     };
-  }, [ticket, canDuck]);
+  }, [ticket, canDuck, audio]);
   const releasePointer = (id: number) => { duckPointers.current.delete(id); setHeld(duckPointers.current.size > 0 || duckKeys.current.size > 0); };
   return (
     <div className="play-surface" ref={surface}>

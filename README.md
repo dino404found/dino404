@@ -16,6 +16,14 @@ Jump through optional four-corner signal gates for **+20** each. The first gate 
 - The third obstacle introduces a mid-height drone, the fifth a low drone, and the eighth a high drone. Short on-screen cues teach the heights.
 - Green Valley, Signal Ridge, and Market District cycle every 7,000 distance units with a gradual palette transition. Scenery has no hitboxes or score bonuses. Reduced motion freezes decorative parallax and removes dust/clear effects.
 
+## Page atmosphere and sound
+
+A moving mint/lime signal field surrounds the page: relay frames, travelling signal pixels and a quiet dot grid. The reading area stays light, and decoration recedes while playing. Device reduced-motion settings and the **Motion** control pause decorative movement.
+
+An original soft 84 BPM pixel soundtrack starts with the run, after the player's Start gesture. Jump, duck, gates, score milestones and collision have short sound cues. **Music**, **FX** and volume are independent controls above the arena; preferences persist in the browser, with a moderate 45% default volume. Sound stops when the run ends or the page loses focus. No audio files, external audio libraries or autoplay on page load are required.
+
+Section links scroll within the page while keeping a clean URL. Existing `/#` and known section links are handled on arrival. See [`docs/ATMOSPHERE-AUDIO.md`](docs/ATMOSPHERE-AUDIO.md) for implementation and verification details.
+
 ## Netlify preview
 
 Netlify runs the complete application with Next.js and managed Postgres. It includes server replay validation, persistent rankings and protected owner exports. See [`docs/NETLIFY.md`](docs/NETLIFY.md) for setup, deployment and owner access. The existing Sites/Cloudflare runtime remains available through the original commands below.
@@ -58,6 +66,7 @@ The built preview has no mock ChatGPT sign-in. The development server provides a
 npm run typecheck
 npm run lint
 npm test
+npm run test:experience
 # Requires the development preview to be running:
 npm run test:api
 npm run test:admin

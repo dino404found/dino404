@@ -22,6 +22,7 @@
     "lint": "eslint app lib db tests scripts vite.config.ts drizzle.config.ts",
     "db:generate": "drizzle-kit generate",
     "test": "node scripts/test.mjs",
+    "test:experience": "node scripts/test-experience.mjs",
     "test:netlify": "node scripts/test-netlify.mjs",
     "test:netlify:api": "node scripts/test-netlify-api.mjs",
     "test:api": "node scripts/test-api.mjs",
