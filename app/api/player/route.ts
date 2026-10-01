@@ -7,6 +7,7 @@ import {
   rateLimit,
   session,
   hash,
+  clientIp,
 } from "@/lib/server";
 import { dayAt, identity } from "@/lib/protocol";
 export async function POST(request: Request) {
@@ -22,7 +23,7 @@ export async function POST(request: Request) {
       "lookup:" +
         (await hash(
           session(request) ??
-            request.headers.get("cf-connecting-ip") ??
+            clientIp(request) ??
             "anonymous",
         )),
       120,

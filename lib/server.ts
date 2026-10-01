@@ -1,10 +1,11 @@
 import { FINALIZE_SNAPSHOT, FINALIZE_DAY, ADVANCE_PRESEASON_VERSION } from "./queries";
 import initialSchema from "@/drizzle/0000_cute_madame_hydra.sql?raw";
 import { initialSchemaStatements } from "./database-bootstrap";
-import { env } from "cloudflare:workers";
+import { env, runtimeDatabase, runtimeKind } from "@/lib/runtime";
 import { getChatGPTUser } from "@/app/chatgpt-auth";
 import { GAME } from "./game";
 import { dayAt, dayEnd, SUBMIT_GRACE_MS } from "./protocol";
+import { isAllowedOrigin } from "./request-origin";
 
 export class HttpError extends Error {
   constructor(
@@ -15,12 +16,7 @@ export class HttpError extends Error {
   }
 }
 export function db() {
-  if (!env.DB)
-    throw new HttpError(
-      503,
-      "The leaderboard is temporarily unavailable. Please try again.",
-    );
-  return env.DB;
+  return runtimeDatabase();
 }
 export function response(
   data: unknown,
@@ -65,7 +61,8 @@ function ensureDatabase() {
 }
 export function sameOrigin(request: Request) {
   const origin = request.headers.get("origin");
-  if (origin && origin !== new URL(request.url).origin)
+  const configured = runtimeKind === "netlify" ? [process.env.APP_ORIGIN, process.env.URL, process.env.DEPLOY_URL, process.env.DEPLOY_PRIME_URL] : [];
+  if (!isAllowedOrigin(request.url, origin, configured))
     throw new HttpError(403, "Cross-origin request denied.");
   if (request.headers.get("sec-fetch-site") === "cross-site")
     throw new HttpError(403, "Cross-site request denied.");
@@ -118,6 +115,9 @@ export function newSession() {
   const bytes = crypto.getRandomValues(new Uint8Array(32));
   return Array.from(bytes, (x) => x.toString(16).padStart(2, "0")).join("");
 }
+export function clientIp(request: Request) {
+  return request.headers.get(runtimeKind === "netlify" ? "x-nf-client-connection-ip" : "cf-connecting-ip");
+}
 export async function hash(value: string) {
   return Array.from(
     new Uint8Array(
@@ -127,7 +127,9 @@ export async function hash(value: string) {
   ).join("");
 }
 export function cookie(value: string, request: Request) {
-  return `dino_session=${value}; HttpOnly; SameSite=Strict; Path=/; Max-Age=2592000${new URL(request.url).protocol === "https:" ? "; Secure" : ""}`;
+  const secure = new URL(request.url).protocol === "https:" ||
+    (runtimeKind === "netlify" && process.env.NETLIFY === "true");
+  return `dino_session=${value}; HttpOnly; SameSite=Strict; Path=/; Max-Age=2592000${secure ? "; Secure" : ""}`;
 }
 export async function rateLimit(key: string, limit: number, now = Date.now()) {
   const bucket = Math.floor(now / 60_000);
@@ -190,6 +192,7 @@ export async function finalizeDay(day: string, now = Date.now()) {
 export async function admin() {
   const user = await getChatGPTUser();
   if (!user) throw new HttpError(401, "Sign in to access the owner area.");
+  if (runtimeKind === "netlify") return user;
   const allowed = (env.ADMIN_EMAIL ?? process.env.ADMIN_EMAIL ?? "")
     .trim()
     .toLowerCase();

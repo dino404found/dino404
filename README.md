@@ -16,7 +16,18 @@ Jump through optional four-corner signal gates for **+20** each. The first gate 
 - The third obstacle introduces a mid-height drone, the fifth a low drone, and the eighth a high drone. Short on-screen cues teach the heights.
 - Green Valley, Signal Ridge, and Market District cycle every 7,000 distance units with a gradual palette transition. Scenery has no hitboxes or score bonuses. Reduced motion freezes decorative parallax and removes dust/clear effects.
 
-## Run locally
+## Netlify preview
+
+Netlify runs the complete application with Next.js and managed Postgres. It includes server replay validation, persistent rankings and protected owner exports. See [`docs/NETLIFY.md`](docs/NETLIFY.md) for setup, deployment and owner access. The existing Sites/Cloudflare runtime remains available through the original commands below.
+
+```powershell
+npm ci
+netlify dev
+```
+
+Netlify CLI starts the local Postgres emulator and applies `netlify/database/migrations`. Use the URL it prints. For integration checks without a Netlify login, run `npm run build:netlify`, `npm run test:netlify` and `npm run test:netlify:api`. The API suite creates a temporary database and starts its own production Next server.
+
+## Run the Sites runtime locally
 
 Requires Node.js 22.13+ and npm. From this directory:
 
@@ -67,7 +78,7 @@ npm run test:admin
 
 ## Owner workflow
 
-1. Visit `/admin` and sign in with the permitted owner account.
+1. On Netlify, open `/owner-login` with username `dino404found` and the privately configured owner password. On Sites, visit `/admin` and sign in with the permitted ChatGPT account.
 2. Select the UTC competition date and load results.
 3. Review the leading runs. The panel includes duration, jump count, duck holds, timestamp and end reason. Classic input logs remain readable.
 4. If a run demonstrably violates the published rules, enter a reason and exclude it. One transaction restores that wallet's next valid best run, recalculates winners, and stores an audit entry. Finalized days receive a new result revision. Concurrent requests and retries do not duplicate the review or revision.
@@ -83,6 +94,8 @@ Copy `.env.example` or `.dev.vars.example` only if local overrides are needed. O
 | Variable | Purpose |
 |---|---|
 | `ADMIN_EMAIL` | Exact email allowed after platform ChatGPT sign-in; keep as a secret runtime value |
+| `ADMIN_PASSWORD_SHA256` | Netlify only: SHA-256 of a randomly generated owner password, at least 32 characters; missing configuration denies owner access |
+| `APP_ORIGIN` | Netlify only: trusted public origin, including scheme, for a stable preview alias behind the Next proxy |
 | `REWARDS_ENABLED` | `true` only when the operator is ready to open rewards |
 | `REWARD_CONTRACT` | Verified, nonzero GOOGLc contract on Robinhood Chain |
 | `REWARD_FIRST` | Positive decimal amount for rank 1 |
@@ -115,13 +128,13 @@ The owner email has been configured privately for the registered Site using its 
 | `app/admin/` | Private review and CSV interface |
 | `db/schema.ts`, `drizzle/` | Schema and generated migrations |
 
-Stack: React/TypeScript, Vinext/Vite, Cloudflare Worker-compatible server, D1 SQLite persistence. Data is not stored only in browser storage. Local storage is limited to identity convenience and a pending retry log.
+Stack: React/TypeScript. Netlify uses Next.js and managed Postgres; Sites uses Vinext/Vite, a Cloudflare-compatible Worker and D1 SQLite. Vite selects `lib/runtime-cloudflare.ts`; Next selects `lib/runtime.ts`. Data is not stored only in browser storage. Local storage is limited to identity convenience and a pending retry log. The two hosts have separate databases; no historical player data is copied automatically.
 
 ## Hosting and release
 
 `.openai/hosting.json` preserves the registered Site ID and the logical `DB` binding. The build includes a Worker entry at `dist/server/index.js`, public assets at `dist/client`, and hosting/migration metadata at `dist/.openai`.
 
-The source is prepared for Sites dispatch authentication. Deploying directly to a different host requires an equivalent trusted identity gateway. Do not trust arbitrary client-supplied `oai-authenticated-user-*` headers on an unprotected origin. The private owner panel intentionally denies access without the trusted platform identity and permitted email.
+Sites uses dispatch authentication and its permitted owner email. Netlify uses a separately configured owner password and rejects client-supplied `oai-authenticated-user-*` headers. Never configure another host to trust those headers without a verified gateway.
 
 Reward days keep their original simulation version until the next UTC day. Version 3.0 retains the 1.0 and 2.0 validators for pending runs and old-day tickets. While rewards are disabled, new tickets switch to 3.0 immediately; existing scores, seed and original run versions are preserved. Do not activate rewards partway through this pre-season transition day.
 

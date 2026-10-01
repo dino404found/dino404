@@ -1,5 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { runtimeKind } from "@/lib/runtime";
+import { verifyOwnerCredentials } from "@/lib/owner-credentials";
 
 export type ChatGPTUser = {
   userId: string;
@@ -20,6 +22,10 @@ const CALLBACK_PATH = "/callback";
 
 export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
   const requestHeaders = await headers();
+  if (runtimeKind === "netlify") {
+    if (!await verifyOwnerCredentials(requestHeaders.get("authorization"), process.env.ADMIN_PASSWORD_SHA256)) return null;
+    return { userId: "dino404found", displayName: "DINO404", email: process.env.ADMIN_EMAIL ?? "336186187+dino404found@users.noreply.github.com", fullName: "DINO404" };
+  }
   const userId = requestHeaders.get(USER_ID_HEADER);
   const email = requestHeaders.get(USER_EMAIL_HEADER);
   if (!userId || !email) return null;
@@ -44,6 +50,8 @@ export async function requireChatGPTUser(
 ): Promise<ChatGPTUser> {
   const user = await getChatGPTUser();
   if (user) return user;
+
+  if (runtimeKind === "netlify") redirect("/owner-login");
 
   redirect(chatGPTSignInPath(returnTo));
 }

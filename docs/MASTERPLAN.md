@@ -899,3 +899,15 @@ Pemilik menyetujui penerapan tema Run to reconnect pada seluruh alur masuk, berm
 - Bermain ulang tidak boleh menampilkan kilatan form awal. Kontrol terkunci selama persiapan dan kembali berfungsi jika request gagal.
 - Reduced motion dan visibility dihormati. Tidak ada suara otomatis, library animasi baru, perubahan physics/bonus, atau perubahan aturan kompetisi.
 - Handoff mencakup halaman masuk desktop/HP, Start, hasil, replay, loading, status gagal/retry dan batas bukti pengujian.
+
+## 25. Amendemen GitHub publik dan preview Netlify — 1 Oktober 2026
+
+Pemilik meminta source langsung publik/open source pada `dino404found/dino404`, identitas Git lokal DINO404, push ke GitHub, lalu preview di akun Netlify DINO404.
+
+- Identitas commit baru memakai DINO404 dan alamat noreply akun GitHub proyek; konfigurasi Git global proyek lain tidak diubah. Riwayat placeholder DINO404 dipetakan melalui `.mailmap`, tanpa force-push/rewrite.
+- Source proyek menggunakan MIT; atribusi dan lisensi aset Chromium serta komponen pihak ketiga wajib dipertahankan. Kredensial, database lokal, fixture runtime dan state deployment tidak masuk repository publik.
+- Preview Netlify harus menjalankan backend penuh: tiket run, replay server, persistensi leaderboard, owner review dan CSV. Gunakan Next.js serta Postgres terkelola dengan migrasi SQL, bukan upload frontend statis saja.
+- Akses owner Netlify menggunakan kredensial privat terpisah dari Sites. Header identitas Sites dari client tidak boleh memberi akses pada Netlify. Hash password disimpan sebagai environment value; password hanya diserahkan lewat file lokal privat.
+- Aturan game, top 3, UTC, tie awal, satu posisi per wallet, bonus Signal Gate dan distribusi manual tetap sama. Preview tetap pre-season tanpa hadiah aktif. Tidak melakukan konfigurasi token, transaksi, domain produksi atau pemindahan skor Sites pada tahap ini.
+- Database preview baru terpisah dari Sites. Konfigurasi produksi, retensi data kompetisi dan auto-deploy GitHub harus dinyatakan jelas saat serah terima; jangan menganggapnya sudah aktif hanya karena preview terbit.
+- Verifikasi mencakup build kedua runtime, tes game/API/CSV, autentikasi owner, rollback/revisi transaksi, origin publik di balik proxy, dan pemeriksaan halaman preview sebenarnya.

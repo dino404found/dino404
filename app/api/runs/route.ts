@@ -10,6 +10,7 @@ import {
   rateLimit,
   response,
   session,
+  clientIp,
 } from "@/lib/server";
 import { identity } from "@/lib/protocol";
 export const dynamic = "force-dynamic";
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
     const now = Date.now();
     await rateLimit("start-session:" + sid, 20, now);
     await rateLimit("start-wallet:" + player.wallet, 30, now);
-    const ip = request.headers.get("cf-connecting-ip");
+    const ip = clientIp(request);
     if (ip) await rateLimit("start-ip:" + (await hash(ip)), 60, now);
     const day = await ensureDay(now);
     if (day!.closes_at - now < 4500)
