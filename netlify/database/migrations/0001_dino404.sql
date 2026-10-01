@@ -64,3 +64,4 @@ CREATE TABLE IF NOT EXISTS "daily_results" (
 	"run_id" text NOT NULL,
 	PRIMARY KEY("day", "revision", "rank")
 );
+

@@ -33,3 +33,7 @@ Audio events are issued after simulation steps and do not change replay, collisi
 - Old bare-hash navigation and section clicks were checked against the resulting address bar. Local QA scripts and synthetic players are excluded from Git and deployment.
 
 Audio unit cases cover corrupt preferences, invalid gain, lazy/failed initialization, independent music/effect mute, cancelling scheduled voices, zero volume, suspension/replay, repeated-cue debounce and finite looping note data. Passing tests is evidence for those cases, not an absolute promise that no future bug can occur.
+
+## Deployment correction
+
+The first update attempt was stopped by Netlify's migration integrity check. The initial preview had applied an SQL file ending with LF plus CRLF; a later whitespace cleanup removed two bytes. The original bytes were recovered and matched against both the original deployment file's SHA-1 and the database's recorded SHA-256. Only that exact original file was restored. No migration tracking rows, application schema or player data were changed. Git attributes now preserve migration bytes, and the Netlify build verifies the applied checksum before compilation. This follows [Netlify's requirement to restore applied migration contents](https://docs.netlify.com/build/data-and-storage/netlify-database/troubleshooting/#migration-modified-after-being-applied).

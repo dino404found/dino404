@@ -1,0 +1,4 @@
+# Applied migrations are byte-checked by Netlify; preserve their original bytes.
+netlify/database/migrations/** -text
+# The initial published migration intentionally ends with an LF plus CRLF.
+netlify/database/migrations/0001_dino404.sql whitespace=-blank-at-eof,cr-at-eol

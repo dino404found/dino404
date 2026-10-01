@@ -74,6 +74,8 @@ The emulator shares one PGlite backend across wire clients; the connection limit
 
 `npm run build` verifies the retained Worker target. Run the two framework builds sequentially: both generate `.next/types`. `npm run typecheck` regenerates Next route types before TypeScript checking so switching targets does not leave incompatible generated declarations.
 
+Applied SQL files are immutable byte-for-byte. The initial preview migration ends with LF followed by CRLF; keep those bytes, even though an editor may consider the ending redundant. `.gitattributes` prevents checkout newline conversion, and `scripts/check-migrations.mjs` verifies the recorded SHA-256 before every Netlify build. Add a new migration for schema changes. See [Netlify's migration checksum guidance](https://docs.netlify.com/build/data-and-storage/netlify-database/troubleshooting/#migration-modified-after-being-applied).
+
 ## Delivery verification — 1 October 2026
 
 - Initial draft deployment: `6abd6f6d4dae866675a58929`, Netlify status `ready`.

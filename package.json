@@ -12,7 +12,7 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "build:netlify": "next build --webpack",
+    "build:netlify": "node scripts/check-migrations.mjs && next build --webpack",
     "dev:netlify": "next dev --webpack",
     "start:netlify": "next start",
     "install:ci": "node scripts/install-ci.mjs",
