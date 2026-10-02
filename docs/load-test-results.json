@@ -1,0 +1,140 @@
+{
+  "origin": "https://dino404.xyz",
+  "startedAt": "2026-10-02T20:43:28.577Z",
+  "finishedAt": "2026-10-02T20:45:07.715Z",
+  "limits": {
+    "maxConcurrency": 20,
+    "requestTimeoutMs": 12000,
+    "readRequests": 144,
+    "runTickets": 36,
+    "stopOnUnexpectedResponse": true,
+    "readP95TargetMs": 2000,
+    "writeP95TargetMs": 3000
+  },
+  "peakInFlight": 20,
+  "stages": [
+    {
+      "kind": "reads",
+      "concurrency": 1,
+      "wallMs": 2849,
+      "requests": 4,
+      "p50Ms": 355.2,
+      "p95Ms": 540.6,
+      "maxMs": 540.6,
+      "non2xx": 0
+    },
+    {
+      "kind": "reads",
+      "concurrency": 5,
+      "wallMs": 10567,
+      "requests": 20,
+      "p50Ms": 477.3,
+      "p95Ms": 2505.9,
+      "maxMs": 3947.3,
+      "non2xx": 0
+    },
+    {
+      "kind": "reads",
+      "concurrency": 10,
+      "wallMs": 8172,
+      "requests": 40,
+      "p50Ms": 460.5,
+      "p95Ms": 2503.4,
+      "maxMs": 2673.7,
+      "non2xx": 0
+    },
+    {
+      "kind": "reads",
+      "concurrency": 20,
+      "wallMs": 9220,
+      "requests": 80,
+      "p50Ms": 531.1,
+      "p95Ms": 2545.8,
+      "maxMs": 3407.7,
+      "non2xx": 0
+    },
+    {
+      "kind": "gameplay",
+      "concurrency": 1,
+      "wallMs": 10361,
+      "requests": 3,
+      "p50Ms": 374.5,
+      "p95Ms": 413.2,
+      "maxMs": 413.2,
+      "non2xx": 0
+    },
+    {
+      "kind": "gameplay",
+      "concurrency": 5,
+      "wallMs": 12122,
+      "requests": 15,
+      "p50Ms": 435.1,
+      "p95Ms": 1526.2,
+      "maxMs": 1526.2,
+      "non2xx": 0
+    },
+    {
+      "kind": "gameplay",
+      "concurrency": 10,
+      "wallMs": 11430,
+      "requests": 30,
+      "p50Ms": 469.8,
+      "p95Ms": 846.7,
+      "maxMs": 850.6,
+      "non2xx": 0
+    },
+    {
+      "kind": "gameplay",
+      "concurrency": 20,
+      "wallMs": 12150,
+      "requests": 60,
+      "p50Ms": 459.5,
+      "p95Ms": 890.6,
+      "maxMs": 998.9,
+      "non2xx": 0
+    }
+  ],
+  "summary": {
+    "requests": 318,
+    "p50Ms": 467.1,
+    "p95Ms": 2414.6,
+    "maxMs": 3947.3,
+    "non2xx": 0
+  },
+  "assertions": [
+    "All generated scores match deterministic replay",
+    "Every retry returns the accepted score",
+    "One row per visible synthetic wallet",
+    "Every synthetic wallet retains its highest score",
+    "Visible synthetic ranking follows score and verified achievement time",
+    "No synthetic wallet remains on leaderboard after review"
+  ],
+  "databaseVerification": {
+    "passed": true,
+    "runs": 36,
+    "distinctWallets": 26,
+    "exactScoresAndAchievementTimes": true,
+    "syntheticBestsRemaining": 0,
+    "exclusionAuditEvents": 36
+  },
+  "latencyTargetsMet": false,
+  "followUp": {
+    "at": "2026-10-02T20:46:58.880Z",
+    "summary": {
+      "/api/competition": {
+        "requests": 15,
+        "p50Ms": 466.8,
+        "p95Ms": 886.1,
+        "maxMs": 886.1
+      },
+      "/api/leaderboard": {
+        "requests": 15,
+        "p50Ms": 738.5,
+        "p95Ms": 1253.7,
+        "maxMs": 1253.7
+      }
+    },
+    "requests": 30,
+    "failed": 0
+  }
+}

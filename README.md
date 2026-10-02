@@ -30,6 +30,8 @@ The 2 October pre-launch audit adds Web Audio compatibility and lifecycle fixes,
 
 Production: [dino404.xyz](https://dino404.xyz/). Preview: [preview--dino404.netlify.app](https://preview--dino404.netlify.app/). Production uses its own main database and custom-domain HTTPS. Deployment details and verification: [`docs/PRODUCTION-LAUNCH.md`](docs/PRODUCTION-LAUNCH.md).
 
+The 3 October bounded production traffic test reached 20 concurrent requests with 348 successful HTTP requests across the main and follow-up runs. Score integrity passed; initial read p95 exceeded the 2-second target. See [`docs/LOAD-TEST.md`](docs/LOAD-TEST.md) for measured results and limits; this is not a maximum-capacity claim.
+
 Netlify runs the complete application with Next.js and managed Postgres. It includes server replay validation, persistent rankings and protected owner exports. See [`docs/NETLIFY.md`](docs/NETLIFY.md) for setup, deployment and owner access. The existing Sites/Cloudflare runtime remains available through the original commands below.
 
 ```powershell
