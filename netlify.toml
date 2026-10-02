@@ -6,6 +6,12 @@
   NODE_VERSION = "22"
   NEXT_TELEMETRY_DISABLED = "1"
 
+[[redirects]]
+  from = "https://dino404.netlify.app/*"
+  to = "https://dino404.xyz/:splat"
+  status = 301
+  force = true
+
 [dev]
   command = "npm run dev:netlify"
   targetPort = 3000

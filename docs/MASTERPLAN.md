@@ -936,3 +936,13 @@ Pemilik meminta pemeriksaan berurutan sebagai debugger, designer, lalu pengunjun
 - Pengunjung baru harus memahami aksi game, fungsi wallet sebagai identitas daily best, dan status pre-season sebelum bermain. Jangan menyiratkan hadiah aktif sebelum konfigurasi season benar-benar aktif.
 - Lengkapi kartu berbagi Open Graph/Twitter dengan artwork statis dari mascot berlisensi yang sama. Canonical dan URL gambar mengikuti origin deployment; preview tidak diindeks. Tidak mengirim posting ke akun sosial.
 - Perubahan diterbitkan ke preview Netlify yang sudah ada setelah pemeriksaan. Domain asli, deployment produksi, hadiah dan auto-deploy memerlukan konfigurasi tahap peluncuran tersendiri. Laporkan cakupan uji dan keterbatasannya; jangan menjanjikan ketiadaan seluruh bug atau ketahanan bot/beban massal tanpa bukti.
+
+## 28. Pemasangan domain produksi — 3 Oktober 2026
+
+Pemilik membeli `dino404.xyz`, mengubah A/CNAME di Hostinger sesuai panduan, lalu melanjutkan pemasangan domain pada Netlify.
+
+- Domain utama `dino404.xyz`, alias `www.dino404.xyz`. Gunakan DNS Hostinger yang sudah ada; A root ke `75.2.60.5`, CNAME www ke `dino404.netlify.app`. Jangan reset zone atau mengubah layanan domain lain.
+- Deploy context produksi memakai `APP_ORIGIN=https://dino404.xyz`; origin preview tetap terpisah. Metadata produksi dapat diindeks, sedangkan preview tetap noindex.
+- Gunakan main database produksi Netlify. Terapkan migrasi immutable melalui build resmi dan periksa persistensi skor, akses owner serta privasi wallet. Fixture QA tidak boleh menjadi peserta leaderboard.
+- Hadiah tetap pre-season/nonaktif sampai ada konfigurasi dan pengumuman terpisah. Pemasangan domain tidak berarti publikasi sosial atau aktivasi hadiah.
+- Verifikasi DNS, sertifikat valid, force HTTPS, redirect www/alamat bawaan, API dan alur browser di domain sebenarnya. Jika propagasi belum selesai pada sebagian resolver, laporkan terpisah dari status deployment.

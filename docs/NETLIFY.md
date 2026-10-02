@@ -4,6 +4,8 @@ The Netlify target runs the complete Next.js application, including run tickets,
 
 ## Project and identity
 
+Production setup was added on 3 October 2026: `dino404.xyz` and `www.dino404.xyz` are assigned to this project, with a production deployment, separate main database and valid HTTPS. See [PRODUCTION-LAUNCH.md](PRODUCTION-LAUNCH.md) for verification. The preview-only delivery section below describes the earlier release.
+
 - Public source: https://github.com/dino404found/dino404
 - Netlify project: `dino404`, owned by the DINO404 team.
 - Verified stable draft URL: https://preview--dino404.netlify.app
@@ -27,7 +29,7 @@ Configure these environment variables in the Netlify project before deployment:
 
 | Variable | Value or purpose |
 | --- | --- |
-| `APP_ORIGIN` | `https://preview--dino404.netlify.app` for the preview alias |
+| `APP_ORIGIN` | `https://dino404.xyz` in production; `https://preview--dino404.netlify.app` in preview contexts |
 | `ADMIN_PASSWORD_SHA256` | SHA-256 hex digest of a random, private 32+ character password |
 | `ADMIN_EMAIL` | Owner identity displayed in audit records |
 | `REWARDS_ENABLED` | `false` during pre-season |

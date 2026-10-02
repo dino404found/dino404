@@ -1,0 +1,35 @@
+# DINO404 production setup — 3 Oktober 2026
+
+Domain produksi: [dino404.xyz](https://dino404.xyz/). Domain dan sertifikat sudah aktif; pemeriksaan akhir redirect serta alur browser pada domain utama sedang dituntaskan.
+
+## Konfigurasi yang diterapkan
+
+- Deployment produksi awal: `6abff8629e70ceb3f8b4baac`, source `705c7ff`, context `production`, status `ready`.
+- Domain utama `dino404.xyz`; alias `www.dino404.xyz`. Sertifikat Netlify berstatus issued untuk keduanya; force HTTPS aktif. Renewal dikelola Netlify.
+- Production `APP_ORIGIN`: `https://dino404.xyz`. Context preview, branch-deploy dan dev tetap memakai `https://preview--dino404.netlify.app`.
+- Main database produksi Netlify terpisah dari branch preview. Keenam tabel aplikasi tersedia; migrasi immutable diterapkan oleh deployment tanpa perubahan file SQL.
+- Password owner yang sudah ada tetap dipakai. Hash, password dan koneksi database tidak masuk source atau dokumentasi publik.
+- `REWARDS_ENABLED=false`: tetap pre-season. Tidak mengaktifkan hadiah atau mengirim publikasi sosial.
+
+DNS yang disimpan pemilik di Hostinger:
+
+| Type | Name | Value | TTL |
+| --- | --- | --- | --- |
+| A | `@` | `75.2.60.5` | 300 |
+| CNAME | `www` | `dino404.netlify.app` | 300 |
+
+Server authoritative Hostinger sudah menjawab kedua nilai yang benar. Registry RDAP mencatat pendaftaran pada 3 Oktober 2026 pukul 01:22:20 WIB dengan nameserver `orbit.dns-parking.com` dan `horizon.dns-parking.com`. Resolver publik awalnya menjawab NXDOMAIN; kemudian Cloudflare sudah menjawab A yang benar dan sertifikat berhasil terbit. Cache DNS yang berbeda dapat membuat sebagian perangkat menyusul belakangan.
+
+Redirect HTTP dan www ke `https://dino404.xyz` sudah diverifikasi. Konfigurasi `netlify.toml` juga menambahkan redirect khusus dari `https://dino404.netlify.app/*` ke domain utama; alamat preview dan URL deploy unik tidak cocok dengan rule ini.
+
+## Pemeriksaan produksi
+
+- Build Next dan TypeScript berhasil; checksum migrasi cocok.
+- 16 pemeriksaan HTTP pada URL deployment produksi lulus: halaman/kontrol, tidak ada fixture QA, header keamanan, canonical domain asli, `index, follow`, kartu berbagi dan PNG 1200 × 630, kompetisi pre-season, privasi wallet, penolakan owner anonim, challenge login, kredensial existing, panel owner noindex, larangan CSV hari berjalan, robots dan penjelasan form. Pemeriksaan tersebut juga berhasil dijalankan pada domain asli sebelum tahap pemeriksaan redirect.
+- Browser pada URL deployment menyelesaikan satu run nyata (77 poin) dengan RUN VERIFIED. Database produksi dan endpoint owner mengonfirmasi hasilnya; konsol tidak mencatat warning/error pada alur tersebut.
+- Run sintetis `Launch QA 0301` dikeluarkan lewat mekanisme review owner. Leaderboard dibersihkan dari skor QA; run excluded dan audit trail dipertahankan. Koneksi database eksternal produksi bersifat read-only; tidak ada perluasan hak akses atau pelemahan proteksi database.
+- Verifikasi akhir setelah penambahan redirect dicatat di bawah setelah deploy selesai.
+
+Preview yang sudah ada tetap tersedia di [preview DINO404](https://preview--dino404.netlify.app/). Source tetap publik. Auto-deploy GitHub, konfigurasi hadiah dan posting X/Twitter tidak diaktifkan dalam perubahan ini. Pengujian bukan uji beban massal atau jaminan semua perangkat bebas bug.
+
+Referensi: [Netlify external DNS](https://docs.netlify.com/manage/domains/configure-domains/configure-external-dns/), [database production/preview](https://docs.netlify.com/build/data-and-storage/netlify-database/).
