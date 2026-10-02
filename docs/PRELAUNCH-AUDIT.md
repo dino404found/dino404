@@ -56,7 +56,18 @@ Runtime Worker mencetak pemberitahuan kompatibilitas `webpack` Next yang memang 
 
 ## Pemeriksaan browser dan hosting
 
-Review awal desktop dan HP 320 px dilakukan langsung pada preview yang sudah ada. Pengulangan visual terhadap build baru dan uji retry melalui UI sedang diselesaikan; browser automation sempat mengalami timeout navigasi. Jangan menganggap screenshot lama sebagai bukti perubahan terbaru. Status hosting/QA akhir ditambahkan setelah verifikasi.
+Verifikasi akhir selesai pada 2 Oktober 2026. [Preview terbaru](https://preview--dino404.netlify.app/) memakai source `a0b8948`; deployment Netlify `6abf7faf9eccb6e275f63e00` berstatus **ready**, tanpa error deployment. Perubahan setelah commit aplikasi tersebut hanya laporan ini.
+
+- **16 pemeriksaan HTTP pada hosting lulus:** halaman dan kontrol terbaru, tidak ada fixture QA yang terkirim, CSS motion/reduced motion, kompetisi pre-season, privasi wallet leaderboard, penolakan owner anonim, challenge login, kredensial owner yang sudah ada, blokir CSV hari berjalan, header keamanan, canonical preview, noindex, metadata berbagi, PNG 1200 × 630, robots, serta petunjuk form/touch terbaru. Canonical dinormalisasi Next tanpa trailing slash; pemeriksaan menerima kedua bentuk URL root yang ekuivalen.
+- **Alur browser lokal dengan database sementara:** respons submit pertama sengaja dibuat HTTP 503. UI menampilkan AWAITING CONFIRMATION, lalu tombol Retry submission menghasilkan RUN VERIFIED untuk skor 77. Replay berikutnya juga terverifikasi; leaderboard tetap satu posisi untuk wallet yang sama. Data sintetis ini hanya ada di database QA lokal, tidak masuk leaderboard publik.
+- **Audio native di browser:** metode `cancelAndHoldAtTime` dihilangkan hanya pada fixture lokal untuk menjalankan fallback dengan node Web Audio asli. Run tetap selesai dan terverifikasi, output audio terukur, serta voice aktif kembali ke 0 setelah run. Ini bukan pengujian langsung Safari atau seluruh perangkat audio.
+- **Visual build baru:** layar 320 px, 390 px dan desktop 1440 px tidak menunjukkan overflow horizontal. Header, form dan petunjuk HP muat. Dialog pada 320 px memiliki tombol tutup 44 × 44 px yang tidak menimpa judul; isi panjang dapat di-scroll.
+- **Motion dan navigasi:** Motion off menghentikan kedelapan animasi latar yang diperiksa. Logo kembali ke atas halaman tanpa menambahkan fragment pada URL. Motion on berfungsi kembali. Konsol browser tidak mencatat warning/error selama alur yang diperiksa.
+- Sampel lokal terakhir mencatat median frame 5,6 ms dan p95 5,7 ms; sampel ini berasal dari desktop yang sedang digunakan dan bukan benchmark semua HP. Audio peak sampel 0,136, di bawah amplitudo 1; ini bukti output pada sesi uji, bukan penilaian kualitas suara dengan headphone.
+
+Bukti screenshot baru tersedia di workspace `artifacts/dino404-prelaunch-desktop.png`, `artifacts/dino404-prelaunch-mobile.png`, `artifacts/dino404-prelaunch-rules-320.png` dan `artifacts/dino404-prelaunch-retry.png`. Dua screenshot pertama diambil dari preview yang sudah dideploy; aturan dan retry dari build QA lokal. Browser yang sebelumnya timeout sudah dapat digunakan kembali dan pemeriksaan tertunda telah diselesaikan.
+
+Tidak ada temuan yang masih terbuka dari cakupan pemeriksaan ini. Untuk pengunjung baru, leaderboard kosong menampilkan ajakan memulai; tidak ditambahkan pemain atau skor palsu untuk mengisinya. Persiapan produksi di bawah tetap perlu dilakukan pada saat pindah domain.
 
 ## Sebelum domain asli diumumkan
 
