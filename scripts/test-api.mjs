@@ -52,10 +52,16 @@ const player = {
   wallet: "0x" + "e".repeat(40),
   confirmed: true,
 };
+q = await request("/api/runs", { ...player, confirmed: false });
+check("unconfirmed receiving address cannot start a run", q.r.status === 400);
+q = await request("/api/runs", { ...player, name: "A".repeat(3000) });
+check("oversized run request rejected before identity parsing", q.r.status === 413);
 q = await request("/api/runs", player);
 assert.equal(q.r.status, 201, JSON.stringify(q.data));
 check("valid run ticket issued", q.r.status === 201 && !!q.data.id);
 const ticket = q.data;
+q = await request(`/api/runs/${ticket.id}/submit`, { ticks: 1, inputs: [], reason: "interrupted" }, { Cookie: "dino_session=" + "0".repeat(64) });
+check("a different session cannot submit another player's ticket", q.r.status === 404);
 q = await request(`/api/runs/${ticket.id}/submit`, {
   ticks: 10000,
   inputs: [],

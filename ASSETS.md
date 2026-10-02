@@ -30,6 +30,7 @@ Wallet input validates a nonzero 20-byte EVM address and normalizes its case. It
 - Header mark, SVG/PNG favicon, multi-size ICO and Apple touch icon: traced from the same licensed idle dinosaur pixels, with the DINO404 green palette. Rebuild with `node scripts/build-brand-assets.mjs` using the existing local `sharp` build dependency. Generated assets are checked in; browsers do not load this script or dependency.
 - Icons: lucide-react, provided by the installed starter dependency.
 - Typography: system fonts; no remote font requests.
+- Social share card: `public/social-card.png` (1200 × 630), composed from the same licensed mascot and original DINO404 layout. Rebuild with `node scripts/build-social-card.mjs`. It is a static file; no runtime image rendering or external image requests are needed.
 - No generated photos, videos, or third-party analytics.
 - The page signal field is original CSS/HTML artwork using the existing four-square relay identity. It uses no downloaded imagery or animation library.
 - The 16-bar pixel soundtrack and six short sound cues are original project compositions in `lib/audio-score.ts`, synthesized by `lib/game-audio.ts` with native Web Audio. No third-party recordings or samples are included; this source follows the project's MIT license.

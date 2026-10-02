@@ -8,6 +8,20 @@ import { UPSERT_BEST, FINALIZE_DAY, FINALIZE_SNAPSHOT } from "../lib/queries";
 import { reviewStatements } from "../lib/review";
 import { verifyOwnerCredentials } from "../lib/owner-credentials";
 import { isAllowedOrigin } from "../lib/request-origin";
+import { homeMetadata, publicSite } from "../lib/site-metadata";
+
+test("sharing URLs follow the deployed origin and only the production custom domain is indexed", () => {
+  const preview = { APP_ORIGIN: "https://preview--dino404.netlify.app", CONTEXT: "deploy-preview" };
+  const metadata = homeMetadata(preview);
+  assert.equal(metadata.alternates?.canonical, preview.APP_ORIGIN + "/");
+  assert.equal((metadata.robots as { index: boolean }).index, false);
+  assert.equal(publicSite({ APP_ORIGIN: "https://dino404.xyz", CONTEXT: "production" }).indexable, true);
+  assert.equal(publicSite({ APP_ORIGIN: preview.APP_ORIGIN, CONTEXT: "production" }).indexable, false);
+  assert.equal(publicSite({}).indexable, false);
+  assert.throws(() => publicSite({ APP_ORIGIN: "https://secret@example.com" }));
+  assert.throws(() => publicSite({ APP_ORIGIN: "https://dino404.xyz/wrong" }));
+  assert.throws(() => publicSite({ APP_ORIGIN: "javascript:alert(1)" }));
+});
 
 test("public platform origin is accepted behind Next's internal host while foreign origins stay denied", () => {
   const internal = "http://localhost:3000/api/runs", publicUrl = "https://dino404.netlify.app";

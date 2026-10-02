@@ -501,8 +501,8 @@ export default function DinoApp() {
             </h1>
           </div>
           <p>
-            One dino. A world of green candles. <br />
-            Jump in. Find your rhythm. Beat your best.
+            Jump candles. Duck drones. Find the signal. <br />
+            A classic runner. A fresh leaderboard every day.
           </p>
         </section>
         <section className="game-section" aria-label="DINO404 game">
@@ -713,6 +713,10 @@ export default function DinoApp() {
                     Your next best run <br />
                     starts here.
                   </h2>
+                  <p className="entry-context">
+                    One wallet. Your best score each day.
+                    <span>{!competition ? "Syncing the daily run…" : rewards?.enabled ? "Season open · Daily top 3 earn GOOGLc" : "Pre-season · Rewards are not active yet"}</span>
+                  </p>
                   <div className="field">
                     <label htmlFor="dino-name">Dino name</label>
                     <Input
@@ -793,7 +797,7 @@ export default function DinoApp() {
                     )}
                   </Button>
                   <p id="wallet-note" className="form-note">
-                    No wallet connection. Just your name and address.
+                    No wallet connection or signature required.
                     <br />
                     Name and shortened address appear on the leaderboard.
                   </p>
@@ -802,10 +806,11 @@ export default function DinoApp() {
             )}
           </div>
           <div className="arena-bottom">
-            <span>
+            <span className="keyboard-instructions">
               <kbd>SPACE</kbd> or <kbd>↑</kbd> to jump{" "}
               <span>· hold <kbd>↓</kbd> to duck</span>
             </span>
+            <span className="touch-instructions">Tap Jump · hold Duck</span>
             <span>
               <ShieldCheck size={15} /> Server-verified scores
             </span>

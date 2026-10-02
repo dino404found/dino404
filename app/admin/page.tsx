@@ -3,6 +3,7 @@ import { requireChatGPTUser } from "@/app/chatgpt-auth";
 import { admin } from "@/lib/server";
 import OwnerPanel from "./owner-panel";
 export const dynamic = "force-dynamic";
+export const metadata = { title: "DINO404 — Owner area", robots: { index: false, follow: false } };
 export default async function AdminPage() {
   await requireChatGPTUser("/admin");
   try {

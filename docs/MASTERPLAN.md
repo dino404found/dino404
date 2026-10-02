@@ -925,3 +925,14 @@ Pemilik meminta background keseluruhan website yang hidup, khas DINO404, tetap t
 - Logo/home kembali ke atas tanpa menambah `#`; navigasi bagian tetap scroll halus, mendukung keyboard dan reduced motion. URL lama dengan fragment yang dikenal tetap menuju bagian yang dimaksud lalu dibersihkan; query string dipertahankan.
 - Periksa viewport desktop/HP, overflow, kontras, pause motion, persistensi preferensi, output audio browser, mute/volume, lifecycle audio, URL, regresi game/API/CSV, lint, TypeScript dan build sebelum preview Netlify diperbarui.
 - Gameplay tetap 3.0.0, aturan kompetisi dan state pre-season tetap berlaku. Dokumentasi sumber/aset mencatat komposisi audio original; fixture pengujian tidak masuk deployment.
+
+## 27. Audit sebelum publikasi — 2 Oktober 2026
+
+Pemilik meminta pemeriksaan berurutan sebagai debugger, designer, lalu pengunjung baru sebelum memakai domain asli dan membagikan website lewat akun resmi.
+
+- Reproduksi bug yang ditemukan, perbaiki, dan lakukan regresi. Suara harus kompatibel ketika fitur Web Audio opsional tidak tersedia; respons audio lama tidak boleh merusak sesi baru.
+- Periksa dependensi aplikasi dan toolchain, validasi server, privasi wallet, akses owner, retry submission, aturan skor/UTC dan CSV. Jaga migrasi yang sudah diterapkan tetap identik byte-for-byte.
+- Pertahankan branding dan background yang sudah disetujui. Rapikan petunjuk kontrol HP, target sentuh dan jarak judul dialog; periksa layar sempit serta desktop.
+- Pengunjung baru harus memahami aksi game, fungsi wallet sebagai identitas daily best, dan status pre-season sebelum bermain. Jangan menyiratkan hadiah aktif sebelum konfigurasi season benar-benar aktif.
+- Lengkapi kartu berbagi Open Graph/Twitter dengan artwork statis dari mascot berlisensi yang sama. Canonical dan URL gambar mengikuti origin deployment; preview tidak diindeks. Tidak mengirim posting ke akun sosial.
+- Perubahan diterbitkan ke preview Netlify yang sudah ada setelah pemeriksaan. Domain asli, deployment produksi, hadiah dan auto-deploy memerlukan konfigurasi tahap peluncuran tersendiri. Laporkan cakupan uji dan keterbatasannya; jangan menjanjikan ketiadaan seluruh bug atau ketahanan bot/beban massal tanpa bukti.

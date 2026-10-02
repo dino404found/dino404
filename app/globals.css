@@ -427,6 +427,14 @@ h1 span {
   align-items: center;
   gap: 6px;
 }
+.arena-bottom { flex-wrap: wrap; }
+.arena-bottom > span { flex-wrap: wrap; }
+.arena-bottom .touch-instructions { display: none; }
+.arena-bottom > span:last-child { white-space: nowrap; }
+@media (max-width: 600px), (pointer: coarse) {
+  .arena-bottom .keyboard-instructions { display: none; }
+  .arena-bottom .touch-instructions { display: flex; }
+}
 kbd {
   font-size: 10px;
   font-family: inherit;
@@ -1512,6 +1520,8 @@ footer > a:last-child {
 .form-note {
   font-size: 12px;
 }
+.entry-context { margin: -12px 0 20px; color: #455d3d; font-size: 12px; line-height: 1.7; }
+.entry-context span { display: block; font-size: 11px; color: #516348; }
 .arena-bottom {
   font-size: 12px;
 }
@@ -1658,6 +1668,11 @@ footer,
   }
 }
 /* Four relays form the shared identity for waiting, verifying and completed runs. */
+@media (max-width: 380px) {
+  .site-header .wordmark { font-size: 21px; }
+  .site-header nav { gap: 10px; font-size: 12px; }
+  .rules-section { grid-template-columns: 1fr; }
+}
 .relay-mark {
   display: inline-grid; grid-template-columns: repeat(2, 5px); gap: 3px;
   width: 13px; height: 13px; flex: 0 0 auto; vertical-align: middle;

@@ -11,7 +11,7 @@ export function audioPreferences(value: unknown): AudioPreferences {
     volume: typeof p.volume === "number" && Number.isFinite(p.volume) ? Math.max(0, Math.min(1, p.volume)) : .45,
   };
 }
-type Voice = { source: OscillatorNode; envelope: GainNode; end: number };
+type Voice = { source: OscillatorNode; envelope: GainNode; start: number; end: number };
 
 /** All audio is cosmetic. No timers or audio state participate in score replay. */
 export class DinoAudio {
@@ -32,6 +32,7 @@ export class DinoAudio {
 
   /** Must be invoked synchronously from Start or an audio-control gesture. */
   async unlock(): Promise<boolean> {
+    let pendingContext: AudioContext | null = null;
     try {
       if (!this.context || this.context.state === "closed") {
         const ctx = this.createContext();
@@ -46,10 +47,16 @@ export class DinoAudio {
         this.effectsBus.type = "lowpass"; this.effectsBus.frequency.value = 3400; this.effectsBus.Q.value = .4;
         this.effectsBus.connect(this.master);
       }
-      if (this.context.state !== "running") await this.context.resume();
+      pendingContext = this.context;
+      if (pendingContext.state !== "running") await pendingContext.resume();
+      // A pending device resume can finish after unmount/disposal and recreation.
+      if (this.context !== pendingContext) return false;
       this.syncMusic();
-      return this.context.state === "running";
-    } catch { this.dispose(); return false; }
+      return pendingContext.state === "running";
+    } catch {
+      if (!pendingContext || this.context === pendingContext) this.dispose();
+      return false;
+    }
   }
 
   setPreferences(prefs: AudioPreferences) {
@@ -125,7 +132,7 @@ export class DinoAudio {
     envelope.gain.exponentialRampToValueAtTime(.0001, end);
     envelope.gain.setValueAtTime(0, end + .01);
     source.connect(envelope); envelope.connect(bus);
-    const voice = { source, envelope, end: end + .02 };
+    const voice = { source, envelope, start: at, end: end + .02 };
     voices.add(voice);
     source.onended = () => { source.disconnect(); envelope.disconnect(); voices.delete(voice); };
     source.start(at); source.stop(voice.end);
@@ -134,8 +141,16 @@ export class DinoAudio {
     const now = this.context?.currentTime ?? 0;
     for (const voice of voices) {
       // A short release avoids clicks, and also cancels notes queued in the future.
-      voice.envelope.gain.cancelAndHoldAtTime(now);
-      voice.envelope.gain.linearRampToValueAtTime(0, now + .025);
+      const gain = voice.envelope.gain;
+      if (typeof gain.cancelAndHoldAtTime === "function") gain.cancelAndHoldAtTime(now);
+      else {
+        // Firefox and older Web Audio implementations lack cancelAndHoldAtTime.
+        // Read the computed gain before cancelling, and keep queued notes silent.
+        const held = now < voice.start ? 0 : gain.value;
+        gain.cancelScheduledValues(now);
+        gain.setValueAtTime(held, now);
+      }
+      gain.linearRampToValueAtTime(0, now + .025);
       try { voice.source.stop(now + .03); } catch { /* Already ended. */ }
     }
     voices.clear();

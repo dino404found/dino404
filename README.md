@@ -24,6 +24,8 @@ An original soft 84 BPM pixel soundtrack starts with the run, after the player's
 
 Section links scroll within the page while keeping a clean URL. Existing `/#` and known section links are handled on arrival. See [`docs/ATMOSPHERE-AUDIO.md`](docs/ATMOSPHERE-AUDIO.md) for implementation and verification details.
 
+The 2 October pre-launch audit adds Web Audio compatibility and lifecycle fixes, clearer mobile instructions and season status, and a static branded share card. See [`docs/PRELAUNCH-AUDIT.md`](docs/PRELAUNCH-AUDIT.md) for findings, verification and remaining production setup.
+
 ## Netlify preview
 
 Netlify runs the complete application with Next.js and managed Postgres. It includes server replay validation, persistent rankings and protected owner exports. See [`docs/NETLIFY.md`](docs/NETLIFY.md) for setup, deployment and owner access. The existing Sites/Cloudflare runtime remains available through the original commands below.

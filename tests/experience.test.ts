@@ -97,3 +97,35 @@ test("original soundtrack loops deterministically with finite, bounded voices an
     assert.ok(notes.every(n => n.level <= .17 && n.duration <= .24 && n.delay >= 0));
   }
 });
+
+test("browsers without cancelAndHoldAtTime can mute, finish and dispose active audio", async () => {
+  const { audio, context } = fixture();
+  try {
+    await audio.unlock(); audio.beginRun(); audio.effect("signal");
+    for (const node of context.gains) Object.defineProperty(node.gain, "cancelAndHoldAtTime", { value: undefined });
+    context.currentTime = .1;
+    assert.doesNotThrow(() => audio.setPreferences({ ...DEFAULT_PREFERENCES, music: false }));
+    assert.doesNotThrow(() => audio.endRun(true));
+    assert.doesNotThrow(() => audio.silence());
+    assert.ok(context.sources.every(n => n.stops.at(-1)! <= .14));
+  } finally { audio.dispose(); }
+});
+
+test("a stale rejected audio resume cannot dispose a newer playable context", async () => {
+  const old = new Context(), current = new Context();
+  let rejectResume!: (reason: Error) => void;
+  old.resume = () => new Promise<void>((_, reject) => { rejectResume = reject; });
+  let created = 0;
+  const audio = new DinoAudio(() => (++created === 1 ? old : current) as unknown as AudioContext);
+  try {
+    const pending = audio.unlock();
+    audio.dispose();
+    assert.equal(await audio.unlock(), true);
+    audio.beginRun();
+    rejectResume(new Error("Device interrupted"));
+    assert.equal(await pending, false);
+    assert.equal(current.state, "running");
+    const before = current.sources.length;
+    audio.effect("jump"); assert.equal(current.sources.length, before + 1);
+  } finally { audio.dispose(); }
+});

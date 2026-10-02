@@ -34,6 +34,12 @@ Configure these environment variables in the Netlify project before deployment:
 
 The platform supplies the database connection. Never commit environment values, connection strings or the owner password. `.netlify/`, `.sites-runtime/` and private environment files are ignored by Git.
 
+`APP_ORIGIN` also supplies the canonical and Open Graph/Twitter image URLs. Set it in the build environment as well as Functions; the homepage metadata is prerendered. Previews emit `noindex, nofollow`. Indexing is enabled only when Netlify's `CONTEXT=production` and `APP_ORIGIN` is HTTPS on `dino404.xyz` or `www.dino404.xyz`. The public homepage remains crawlable so share crawlers can read the card and search crawlers can read `noindex`; robots rules exclude API and owner routes. Robots directives do not replace owner authentication.
+
+Before publishing the real domain: configure DNS and HTTPS in Netlify, set the production-context `APP_ORIGIN` to the chosen canonical custom domain, select the correct production database/retention settings, and verify a real production run and owner access on that origin. Keep the preview-context origin pointing at the preview. Rebuild after changing the origin, then verify the generated canonical and share image URLs. Rewards remain disabled until the owner supplies their separate configuration. GitHub auto-deploy still requires linking the repository.
+
+Dependency patches from the 2 October audit keep Next at 16.3.8, React/React DOM/RSC together at 19.2.8, and Vite at 8.0.16. Explicit compatible tool overrides pin patched `ws`, `undici`, `image-size`, and `esbuild`, including transitive versions pinned by older build tools. Re-evaluate these overrides when upgrading the parent tools. Both framework builds and regression suites must pass after dependency changes; do not use a forced audit fix that downgrades Drizzle.
+
 ```powershell
 netlify deploy --alias preview --context deploy-preview
 ```
